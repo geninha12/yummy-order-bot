@@ -17,6 +17,8 @@ import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import OrderConfirmation from "./pages/OrderConfirmation";
 import Orders from "./pages/Orders";
+import Sobre from "./pages/Sobre";
+import Contato from "./pages/Contato";
 
 // Restaurant Pages
 import Dashboard from "./pages/restaurant/Dashboard";
@@ -48,6 +50,8 @@ const App = () => (
                 <Route path="/confirmacao-pedido/:orderId" element={<OrderConfirmation />} />
                 <Route path="/pedidos" element={<Orders />} />
                 <Route path="/pedidos/:orderId" element={<OrderConfirmation />} />
+                <Route path="/sobre" element={<Sobre />} />
+                <Route path="/contato" element={<Contato />} />
                 
                 {/* Rotas Administrativas do Restaurante */}
                 <Route path="/restaurante/painel" element={<Dashboard />} />
