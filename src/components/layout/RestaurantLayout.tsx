@@ -35,16 +35,16 @@ const RestaurantLayout: React.FC<RestaurantLayoutProps> = ({ children }) => {
   };
 
   const sidebarLinks = [
-    { name: 'Dashboard', path: '/restaurant/dashboard', icon: LayoutDashboard },
-    { name: 'Menu Management', path: '/restaurant/menu', icon: MenuIcon },
-    { name: 'Orders', path: '/restaurant/orders', icon: ShoppingBag },
-    { name: 'Analytics', path: '/restaurant/analytics', icon: BarChart3 },
-    { name: 'Settings', path: '/restaurant/settings', icon: Settings },
+    { name: 'Painel', path: '/restaurante/painel', icon: LayoutDashboard },
+    { name: 'Gerenciar Cardápio', path: '/restaurante/cardapio', icon: MenuIcon },
+    { name: 'Pedidos', path: '/restaurante/pedidos', icon: ShoppingBag },
+    { name: 'Relatórios', path: '/restaurante/relatorios', icon: BarChart3 },
+    { name: 'Configurações', path: '/restaurante/configuracoes', icon: Settings },
   ];
 
   return (
     <div className="flex h-screen overflow-hidden">
-      {/* Sidebar */}
+      {/* Barra Lateral */}
       <aside 
         className={cn(
           "bg-white border-r border-gray-200 flex flex-col transition-all duration-300 ease-in-out",
@@ -53,7 +53,7 @@ const RestaurantLayout: React.FC<RestaurantLayoutProps> = ({ children }) => {
       >
         <div className="p-4 flex items-center justify-between border-b border-gray-200">
           {!collapsed && (
-            <Link to="/restaurant/dashboard" className="text-xl font-bold text-primary">
+            <Link to="/restaurante/painel" className="text-xl font-bold text-primary">
               YummyOrder
             </Link>
           )}
@@ -98,16 +98,16 @@ const RestaurantLayout: React.FC<RestaurantLayoutProps> = ({ children }) => {
             onClick={handleLogout}
           >
             <LogOut className={cn("h-5 w-5", collapsed ? "mx-auto" : "mr-2")} />
-            {!collapsed && <span>Log out</span>}
+            {!collapsed && <span>Sair</span>}
           </Button>
         </div>
       </aside>
 
-      {/* Main Content */}
+      {/* Conteúdo Principal */}
       <div className="flex-1 flex flex-col overflow-hidden">
         <header className="bg-white border-b border-gray-200 py-4 px-6">
           <h1 className="text-xl font-bold">{
-            sidebarLinks.find(link => isActive(link.path))?.name || 'Dashboard'
+            sidebarLinks.find(link => isActive(link.path))?.name || 'Painel'
           }</h1>
         </header>
         <main className="flex-1 overflow-y-auto bg-gray-50 p-6">

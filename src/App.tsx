@@ -38,24 +38,24 @@ const App = () => (
             <Sonner />
             <BrowserRouter>
               <Routes>
-                {/* Public Routes */}
+                {/* Rotas Públicas */}
                 <Route path="/" element={<Index />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
-                <Route path="/menu" element={<Menu />} />
-                <Route path="/cart" element={<Cart />} />
-                <Route path="/checkout" element={<Checkout />} />
-                <Route path="/order-confirmation/:orderId" element={<OrderConfirmation />} />
-                <Route path="/orders" element={<Orders />} />
-                <Route path="/orders/:orderId" element={<OrderConfirmation />} />
+                <Route path="/entrar" element={<Login />} />
+                <Route path="/cadastro" element={<Register />} />
+                <Route path="/cardapio" element={<Menu />} />
+                <Route path="/carrinho" element={<Cart />} />
+                <Route path="/finalizar-pedido" element={<Checkout />} />
+                <Route path="/confirmacao-pedido/:orderId" element={<OrderConfirmation />} />
+                <Route path="/pedidos" element={<Orders />} />
+                <Route path="/pedidos/:orderId" element={<OrderConfirmation />} />
                 
-                {/* Restaurant Admin Routes */}
-                <Route path="/restaurant/dashboard" element={<Dashboard />} />
-                <Route path="/restaurant/menu" element={<MenuManagement />} />
-                <Route path="/restaurant/orders" element={<OrderManagement />} />
-                <Route path="/restaurant/analytics" element={<Analytics />} />
+                {/* Rotas Administrativas do Restaurante */}
+                <Route path="/restaurante/painel" element={<Dashboard />} />
+                <Route path="/restaurante/cardapio" element={<MenuManagement />} />
+                <Route path="/restaurante/pedidos" element={<OrderManagement />} />
+                <Route path="/restaurante/relatorios" element={<Analytics />} />
                 
-                {/* Catch All */}
+                {/* Rota de Erro */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>
