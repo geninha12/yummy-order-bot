@@ -36,9 +36,9 @@ const Register = () => {
   const onSubmit = async (data: RegisterFormData) => {
     try {
       await registerUser(data.name, data.email, data.password, isRestaurant);
-      navigate(isRestaurant ? '/restaurant/dashboard' : '/menu');
+      navigate(isRestaurant ? '/restaurante/painel' : '/cardapio');
     } catch (error) {
-      console.error('Registration error:', error);
+      console.error('Erro no cadastro:', error);
     }
   };
 
@@ -47,9 +47,9 @@ const Register = () => {
       <div className="container mx-auto py-12 px-4 sm:px-6 lg:px-8 animate-fade-in">
         <div className="max-w-md mx-auto">
           <div className="text-center mb-8">
-            <h1 className="heading-lg mb-2">Create an account</h1>
+            <h1 className="heading-lg mb-2">Criar uma conta</h1>
             <p className="text-muted-foreground">
-              Sign up to start ordering delicious food
+              Cadastre-se para começar a pedir comidas deliciosas
             </p>
           </div>
 
@@ -61,7 +61,7 @@ const Register = () => {
                 }`}
                 onClick={() => setIsRestaurant(false)}
               >
-                Customer
+                Cliente
               </button>
               <button
                 className={`flex-1 py-2 text-center border-b-2 transition-colors ${
@@ -69,18 +69,18 @@ const Register = () => {
                 }`}
                 onClick={() => setIsRestaurant(true)}
               >
-                Restaurant
+                Restaurante
               </button>
             </div>
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Name</Label>
+                <Label htmlFor="name">Nome</Label>
                 <Input
                   id="name"
-                  placeholder={isRestaurant ? "Restaurant name" : "Your name"}
+                  placeholder={isRestaurant ? "Nome do restaurante" : "Seu nome"}
                   {...register('name', {
-                    required: 'Name is required',
+                    required: 'Nome é obrigatório',
                   })}
                 />
                 {errors.name && (
@@ -93,12 +93,12 @@ const Register = () => {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="Enter your email"
+                  placeholder="Digite seu email"
                   {...register('email', {
-                    required: 'Email is required',
+                    required: 'Email é obrigatório',
                     pattern: {
                       value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                      message: 'Invalid email address',
+                      message: 'Endereço de email inválido',
                     },
                   })}
                 />
@@ -108,16 +108,16 @@ const Register = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">Senha</Label>
                 <Input
                   id="password"
                   type="password"
-                  placeholder="Create a password"
+                  placeholder="Crie uma senha"
                   {...register('password', {
-                    required: 'Password is required',
+                    required: 'Senha é obrigatória',
                     minLength: {
                       value: 6,
-                      message: 'Password must be at least 6 characters',
+                      message: 'Senha deve ter pelo menos 6 caracteres',
                     },
                   })}
                 />
@@ -127,15 +127,15 @@ const Register = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <Label htmlFor="confirmPassword">Confirmar Senha</Label>
                 <Input
                   id="confirmPassword"
                   type="password"
-                  placeholder="Confirm your password"
+                  placeholder="Confirme sua senha"
                   {...register('confirmPassword', {
-                    required: 'Please confirm your password',
+                    required: 'Por favor confirme sua senha',
                     validate: value =>
-                      value === password || 'Passwords do not match',
+                      value === password || 'As senhas não coincidem',
                   })}
                 />
                 {errors.confirmPassword && (
@@ -146,19 +146,19 @@ const Register = () => {
               {!isRestaurant && (
                 <>
                   <div className="space-y-2">
-                    <Label htmlFor="address">Address (optional)</Label>
+                    <Label htmlFor="address">Endereço (opcional)</Label>
                     <Input
                       id="address"
-                      placeholder="Delivery address"
+                      placeholder="Endereço de entrega"
                       {...register('address')}
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="phone">Phone (optional)</Label>
+                    <Label htmlFor="phone">Telefone (opcional)</Label>
                     <Input
                       id="phone"
-                      placeholder="Phone number"
+                      placeholder="Número de telefone"
                       {...register('phone')}
                     />
                   </div>
@@ -169,17 +169,17 @@ const Register = () => {
                 <Checkbox
                   id="acceptTerms"
                   {...register('acceptTerms', {
-                    required: 'You must accept the terms and conditions',
+                    required: 'Você deve aceitar os termos e condições',
                   })}
                 />
                 <Label htmlFor="acceptTerms" className="text-sm">
-                  I agree to the{' '}
+                  Eu concordo com os{' '}
                   <a href="#" className="text-primary hover:underline">
-                    Terms of Service
+                    Termos de Serviço
                   </a>{' '}
-                  and{' '}
+                  e{' '}
                   <a href="#" className="text-primary hover:underline">
-                    Privacy Policy
+                    Política de Privacidade
                   </a>
                 </Label>
               </div>
@@ -188,14 +188,14 @@ const Register = () => {
               )}
 
               <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? 'Creating Account...' : 'Create Account'}
+                {loading ? 'Criando Conta...' : 'Criar Conta'}
               </Button>
             </form>
 
             <div className="mt-6 text-center text-sm">
-              <span className="text-muted-foreground">Already have an account?</span>{' '}
-              <Link to="/login" className="text-primary hover:underline">
-                Sign in
+              <span className="text-muted-foreground">Já tem uma conta?</span>{' '}
+              <Link to="/entrar" className="text-primary hover:underline">
+                Entrar
               </Link>
             </div>
           </div>

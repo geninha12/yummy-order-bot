@@ -32,18 +32,18 @@ const Login = () => {
       // Navigate based on the user type
       // In a real app, this would happen after checking the user type from the response
       if (data.email === 'restaurant@example.com') {
-        navigate('/restaurant/dashboard');
+        navigate('/restaurante/painel');
       } else {
-        navigate('/menu');
+        navigate('/cardapio');
       }
     } catch (error) {
-      toast.error('Invalid email or password. Try restaurant@example.com / password or customer@example.com / password');
+      toast.error('Email ou senha inválidos. Tente restaurant@example.com / password ou customer@example.com / password');
     }
   };
 
   const handleGuestLogin = () => {
     loginAsGuest();
-    navigate('/menu');
+    navigate('/cardapio');
   };
 
   return (
@@ -51,9 +51,9 @@ const Login = () => {
       <div className="container mx-auto py-12 px-4 sm:px-6 lg:px-8 animate-fade-in">
         <div className="max-w-md mx-auto">
           <div className="text-center mb-8">
-            <h1 className="heading-lg mb-2">Welcome back</h1>
+            <h1 className="heading-lg mb-2">Bem-vindo de volta</h1>
             <p className="text-muted-foreground">
-              Sign in to your account to continue
+              Entre na sua conta para continuar
             </p>
           </div>
 
@@ -65,7 +65,7 @@ const Login = () => {
                 }`}
                 onClick={() => setIsRestaurant(false)}
               >
-                Customer
+                Cliente
               </button>
               <button
                 className={`flex-1 py-2 text-center border-b-2 transition-colors ${
@@ -73,7 +73,7 @@ const Login = () => {
                 }`}
                 onClick={() => setIsRestaurant(true)}
               >
-                Restaurant
+                Restaurante
               </button>
             </div>
 
@@ -83,12 +83,12 @@ const Login = () => {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="Enter your email"
+                  placeholder="Digite seu email"
                   {...register('email', {
-                    required: 'Email is required',
+                    required: 'Email é obrigatório',
                     pattern: {
                       value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                      message: 'Invalid email address',
+                      message: 'Endereço de email inválido',
                     },
                   })}
                 />
@@ -99,23 +99,23 @@ const Login = () => {
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="password">Password</Label>
+                  <Label htmlFor="password">Senha</Label>
                   <Link
-                    to="/forgot-password"
+                    to="/esqueci-senha"
                     className="text-xs text-primary hover:underline"
                   >
-                    Forgot password?
+                    Esqueceu a senha?
                   </Link>
                 </div>
                 <Input
                   id="password"
                   type="password"
-                  placeholder="Enter your password"
+                  placeholder="Digite sua senha"
                   {...register('password', {
-                    required: 'Password is required',
+                    required: 'Senha é obrigatória',
                     minLength: {
                       value: 6,
-                      message: 'Password must be at least 6 characters',
+                      message: 'Senha deve ter pelo menos 6 caracteres',
                     },
                   })}
                 />
@@ -125,7 +125,7 @@ const Login = () => {
               </div>
 
               <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? 'Signing in...' : 'Sign In'}
+                {loading ? 'Entrando...' : 'Entrar'}
               </Button>
             </form>
 
@@ -137,23 +137,23 @@ const Login = () => {
                   onClick={handleGuestLogin}
                   disabled={loading}
                 >
-                  Continue as Guest
+                  Continuar como Visitante
                 </Button>
               </div>
             )}
 
             <div className="mt-6 text-center text-sm">
-              <span className="text-muted-foreground">Don't have an account?</span>{' '}
-              <Link to="/register" className="text-primary hover:underline">
-                Sign up
+              <span className="text-muted-foreground">Não tem uma conta?</span>{' '}
+              <Link to="/cadastro" className="text-primary hover:underline">
+                Cadastre-se
               </Link>
             </div>
           </div>
 
           <div className="mt-4 text-center text-xs text-muted-foreground">
-            <p>Demo credentials:</p>
-            <p>Restaurant: restaurant@example.com / password</p>
-            <p>Customer: customer@example.com / password</p>
+            <p>Credenciais para demonstração:</p>
+            <p>Restaurante: restaurant@example.com / password</p>
+            <p>Cliente: customer@example.com / password</p>
           </div>
         </div>
       </div>
