@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { CalendarIcon } from 'lucide-react';
 import RestaurantLayout from '@/components/layout/RestaurantLayout';
@@ -11,14 +10,12 @@ import { format } from 'date-fns';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { cn } from '@/lib/utils';
 import { useOrders, Order } from '@/context/OrderContext';
+import { DateRange } from 'react-day-picker';
 
 const Analytics = () => {
   const { orders, getOrdersByDateRange } = useOrders();
   const [selectedPeriod, setSelectedPeriod] = useState('week');
-  const [dateRange, setDateRange] = useState<{
-    from: Date | undefined;
-    to: Date | undefined;
-  }>({
+  const [dateRange, setDateRange] = useState<DateRange>({
     from: undefined,
     to: undefined,
   });
@@ -44,10 +41,8 @@ const Analytics = () => {
 
   const filteredOrders = getFilteredOrders();
 
-  // Generate sales data
   const generateSalesData = () => {
     if (selectedPeriod === 'day') {
-      // Hourly data for today
       const data = Array(24)
         .fill(0)
         .map((_, i) => ({ name: `${i}:00`, sales: 0 }));
@@ -60,7 +55,6 @@ const Analytics = () => {
       
       return data;
     } else if (selectedPeriod === 'week') {
-      // Daily data for this week
       const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
       const data = days.map(day => ({ name: day, sales: 0 }));
       
@@ -72,7 +66,6 @@ const Analytics = () => {
       
       return data;
     } else if (selectedPeriod === 'month') {
-      // Group by day of month
       const today = new Date();
       const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
       
@@ -88,7 +81,6 @@ const Analytics = () => {
       
       return data;
     } else if (selectedPeriod === 'year') {
-      // Monthly data for this year
       const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       const data = months.map(month => ({ name: month, sales: 0 }));
       
@@ -100,7 +92,6 @@ const Analytics = () => {
       
       return data;
     } else if (selectedPeriod === 'custom') {
-      // Group by day for custom range
       if (!dateRange.from || !dateRange.to) return [];
       
       const days: { [key: string]: { name: string; sales: number } } = {};
@@ -123,7 +114,6 @@ const Analytics = () => {
     return [];
   };
 
-  // Generate category data for pie chart
   const generateCategoryData = () => {
     const categories: { [key: string]: number } = {};
     
@@ -153,7 +143,6 @@ const Analytics = () => {
     return Object.entries(categories).map(([name, value]) => ({ name, value }));
   };
 
-  // Calculate overview stats
   const calculateStats = () => {
     const totalSales = filteredOrders.reduce((sum, order) => sum + order.total, 0);
     const totalOrders = filteredOrders.length;
@@ -205,6 +194,7 @@ const Analytics = () => {
                   selected={dateRange}
                   onSelect={setDateRange}
                   numberOfMonths={2}
+                  className="pointer-events-auto" 
                 />
               </PopoverContent>
             </Popover>
