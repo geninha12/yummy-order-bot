@@ -31,26 +31,26 @@ const Header = () => {
 
   const navigationLinks = user?.isRestaurant
     ? [
-        { name: 'Dashboard', path: '/restaurant/dashboard' },
-        { name: 'Menu Management', path: '/restaurant/menu' },
-        { name: 'Orders', path: '/restaurant/orders' },
-        { name: 'Analytics', path: '/restaurant/analytics' },
+        { name: 'Painel', path: '/restaurante/painel' },
+        { name: 'Cardápio', path: '/restaurante/cardapio' },
+        { name: 'Pedidos', path: '/restaurante/pedidos' },
+        { name: 'Relatórios', path: '/restaurante/relatorios' },
       ]
     : [
-        { name: 'Home', path: '/' },
-        { name: 'Menu', path: '/menu' },
-        { name: 'About', path: '/about' },
-        { name: 'Contact', path: '/contact' },
+        { name: 'Início', path: '/' },
+        { name: 'Cardápio', path: '/cardapio' },
+        { name: 'Sobre', path: '/sobre' },
+        { name: 'Contato', path: '/contato' },
       ];
 
   const accountLinks = user
     ? [
-        { name: 'Profile', path: user.isRestaurant ? '/restaurant/profile' : '/profile' },
-        { name: 'Orders', path: '/orders' },
+        { name: 'Perfil', path: user.isRestaurant ? '/restaurante/perfil' : '/perfil' },
+        { name: 'Pedidos', path: '/pedidos' },
       ]
     : [
-        { name: 'Login', path: '/login' },
-        { name: 'Register', path: '/register' },
+        { name: 'Entrar', path: '/entrar' },
+        { name: 'Cadastro', path: '/cadastro' },
       ];
 
   return (
@@ -78,7 +78,7 @@ const Header = () => {
         <div className="hidden md:flex items-center space-x-4">
           {user ? (
             <>
-              <div className="text-sm font-medium">Hello, {user.name}</div>
+              <div className="text-sm font-medium">Olá, {user.name}</div>
               <Button
                 variant="ghost"
                 size="icon"
@@ -90,19 +90,19 @@ const Header = () => {
             </>
           ) : (
             <div className="flex items-center space-x-4">
-              <Link to="/login">
+              <Link to="/entrar">
                 <Button variant="ghost" size="sm">
-                  Login
+                  Entrar
                 </Button>
               </Link>
-              <Link to="/register">
-                <Button size="sm">Register</Button>
+              <Link to="/cadastro">
+                <Button size="sm">Cadastrar</Button>
               </Link>
             </div>
           )}
 
           {!user?.isRestaurant && (
-            <Link to="/cart" className="relative">
+            <Link to="/carrinho" className="relative">
               <Button variant="outline" size="icon">
                 <ShoppingCart className="h-5 w-5" />
                 {totalItems > 0 && (
@@ -118,7 +118,7 @@ const Header = () => {
         {/* Mobile Menu Button */}
         <div className="md:hidden flex items-center space-x-4">
           {!user?.isRestaurant && (
-            <Link to="/cart" className="relative">
+            <Link to="/carrinho" className="relative">
               <Button variant="outline" size="icon">
                 <ShoppingCart className="h-5 w-5" />
                 {totalItems > 0 && (
@@ -160,7 +160,7 @@ const Header = () => {
                     {user ? (
                       <>
                         <div className="px-4 py-2 text-sm font-medium">
-                          Signed in as {user.name}
+                          Conectado como {user.name}
                         </div>
                         {accountLinks.map((link) => (
                           <Link
@@ -179,24 +179,24 @@ const Header = () => {
                             setIsMobileMenuOpen(false);
                           }}
                         >
-                          <LogOut className="h-4 w-4 mr-2" /> Sign Out
+                          <LogOut className="h-4 w-4 mr-2" /> Sair
                         </button>
                       </>
                     ) : (
                       <>
                         <Link
-                          to="/login"
+                          to="/entrar"
                           className="block py-2 px-4 text-base rounded-md hover:bg-secondary"
                           onClick={() => setIsMobileMenuOpen(false)}
                         >
-                          <User className="h-4 w-4 mr-2 inline-block" /> Login
+                          <User className="h-4 w-4 mr-2 inline-block" /> Entrar
                         </Link>
                         <Link
-                          to="/register"
+                          to="/cadastro"
                           className="block py-2 px-4 text-base rounded-md font-medium text-primary"
                           onClick={() => setIsMobileMenuOpen(false)}
                         >
-                          Register
+                          Cadastrar
                         </Link>
                       </>
                     )}
