@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { toast } from "sonner";
 
@@ -43,6 +42,7 @@ type WhatsAppContextType = {
   accountInfo: { id: string; name: string } | null;
   flows: WhatsAppFlow[];
   contacts: WhatsAppContact[];
+  verificationToken: string | null;
   connectWhatsApp: (token: string, phoneNumberId: string, appId?: string, appSecret?: string) => Promise<void>;
   disconnectWhatsApp: () => void;
   createFlow: (flow: Omit<WhatsAppFlow, 'id' | 'createdAt' | 'updatedAt'>) => Promise<WhatsAppFlow>;
@@ -51,6 +51,7 @@ type WhatsAppContextType = {
   activateFlow: (id: string) => Promise<void>;
   deactivateFlow: (id: string) => Promise<void>;
   sendTestMessage: (phoneNumber: string, message: string) => Promise<void>;
+  generateVerificationToken: () => Promise<string>;
 };
 
 const WhatsAppContext = createContext<WhatsAppContextType | undefined>(undefined);
@@ -148,6 +149,7 @@ export const WhatsAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [phoneNumberId, setPhoneNumberId] = useState<string | null>(null);
   const [appId, setAppId] = useState<string | null>(null);
   const [appSecret, setAppSecret] = useState<string | null>(null);
+  const [verificationToken, setVerificationToken] = useState<string | null>(null);
 
   // Verificar se existem credenciais armazenadas ao iniciar
   useEffect(() => {
@@ -155,12 +157,14 @@ export const WhatsAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const storedPhoneNumberId = localStorage.getItem('whatsapp_phone_id');
     const storedAppId = localStorage.getItem('whatsapp_app_id');
     const storedAppSecret = localStorage.getItem('whatsapp_app_secret');
+    const storedVerificationToken = localStorage.getItem('whatsapp_verification_token');
     
     if (storedToken && storedPhoneNumberId) {
       setAccessToken(storedToken);
       setPhoneNumberId(storedPhoneNumberId);
       if (storedAppId) setAppId(storedAppId);
       if (storedAppSecret) setAppSecret(storedAppSecret);
+      if (storedVerificationToken) setVerificationToken(storedVerificationToken);
       
       connectWhatsApp(storedToken, storedPhoneNumberId, storedAppId || undefined, storedAppSecret || undefined).catch(() => {
         // Tokens podem ter expirado
@@ -168,10 +172,12 @@ export const WhatsAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         localStorage.removeItem('whatsapp_phone_id');
         localStorage.removeItem('whatsapp_app_id');
         localStorage.removeItem('whatsapp_app_secret');
+        localStorage.removeItem('whatsapp_verification_token');
         setAccessToken(null);
         setPhoneNumberId(null);
         setAppId(null);
         setAppSecret(null);
+        setVerificationToken(null);
       });
     }
   }, []);
@@ -233,11 +239,27 @@ export const WhatsAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setPhoneNumberId(null);
     setAppId(null);
     setAppSecret(null);
+    setVerificationToken(null);
     localStorage.removeItem('whatsapp_token');
     localStorage.removeItem('whatsapp_phone_id');
     localStorage.removeItem('whatsapp_app_id');
     localStorage.removeItem('whatsapp_app_secret');
+    localStorage.removeItem('whatsapp_verification_token');
     toast.success('WhatsApp desconectado com sucesso!');
+  };
+
+  const generateVerificationToken = async (): Promise<string> => {
+    // Gerar um token aleatório de 24 caracteres
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let token = '';
+    for (let i = 0; i < 24; i++) {
+      token += characters.charAt(Math.floor(Math.random() * characters.length));
+    }
+    
+    setVerificationToken(token);
+    localStorage.setItem('whatsapp_verification_token', token);
+    
+    return token;
   };
 
   const createFlow = async (flowData: Omit<WhatsAppFlow, 'id' | 'createdAt' | 'updatedAt'>): Promise<WhatsAppFlow> => {
@@ -369,6 +391,7 @@ export const WhatsAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         accountInfo,
         flows,
         contacts,
+        verificationToken,
         connectWhatsApp,
         disconnectWhatsApp,
         createFlow,
@@ -376,7 +399,8 @@ export const WhatsAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         deleteFlow,
         activateFlow,
         deactivateFlow,
-        sendTestMessage
+        sendTestMessage,
+        generateVerificationToken
       }}
     >
       {children}

@@ -1,13 +1,16 @@
 
-import React from 'react';
-import { Info, Copy } from 'lucide-react';
+import React, { useState } from 'react';
+import { Info, Copy, RefreshCw } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useWhatsApp } from '@/context/WhatsAppContext';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 const WebhookInfo: React.FC = () => {
-  const { isConnected } = useWhatsApp();
+  const { isConnected, generateVerificationToken, verificationToken } = useWhatsApp();
+  const [isGeneratingToken, setIsGeneratingToken] = useState(false);
   
   if (!isConnected) {
     return null;
@@ -22,6 +25,18 @@ const WebhookInfo: React.FC = () => {
     }).catch(() => {
       toast.error('Não foi possível copiar para a área de transferência');
     });
+  };
+
+  const handleGenerateToken = async () => {
+    setIsGeneratingToken(true);
+    try {
+      await generateVerificationToken();
+      toast.success('Token de verificação gerado com sucesso!');
+    } catch (error) {
+      toast.error('Erro ao gerar token de verificação');
+    } finally {
+      setIsGeneratingToken(false);
+    }
   };
 
   return (
@@ -53,6 +68,49 @@ const WebhookInfo: React.FC = () => {
           </div>
           <p className="text-xs text-muted-foreground mt-2">
             Use esta URL no painel de desenvolvedores do Facebook para configurar os webhooks.
+          </p>
+        </div>
+
+        <div>
+          <Label htmlFor="verification-token" className="text-sm font-medium">Token de Verificação</Label>
+          <div className="flex items-center mt-2">
+            <Input 
+              id="verification-token"
+              value={verificationToken || ''} 
+              readOnly 
+              className="text-xs font-mono"
+              placeholder="Clique em 'Gerar Token' para criar um token de verificação"
+            />
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="ml-2 whitespace-nowrap" 
+              onClick={handleGenerateToken}
+              disabled={isGeneratingToken}
+            >
+              {isGeneratingToken ? (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  Gerando...
+                </>
+              ) : (
+                'Gerar Token'
+              )}
+            </Button>
+            {verificationToken && (
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="ml-2" 
+                onClick={() => copyToClipboard(verificationToken, 'Token de verificação copiado!')}
+              >
+                <Copy className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">
+            Este token é usado para verificar a autenticidade das solicitações de webhook. 
+            Forneça-o na configuração do webhook no painel do Facebook Developers.
           </p>
         </div>
 
