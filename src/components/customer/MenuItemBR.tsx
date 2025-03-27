@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Plus, Minus, ShoppingCart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { MenuItem as MenuItemType } from '@/context/MenuContext';
-import { useCart } from '@/context/CartContext';
+import { useCart, CartItemOption } from '@/context/CartContext';
 import { toast } from 'sonner';
 import {
   Sheet,
@@ -23,9 +23,9 @@ interface MenuItemProps {
 }
 
 const MenuItemBR = ({ item }: MenuItemProps) => {
-  const { addToCart } = useCart();
+  const { addItem } = useCart();
   const [quantity, setQuantity] = useState(1);
-  const [selectedOptions, setSelectedOptions] = useState<Array<{ id: string, name: string, price: number }>>([]);
+  const [selectedOptions, setSelectedOptions] = useState<CartItemOption[]>([]);
 
   const incrementQuantity = () => setQuantity(q => q + 1);
   const decrementQuantity = () => setQuantity(q => (q > 1 ? q - 1 : 1));
@@ -36,20 +36,27 @@ const MenuItemBR = ({ item }: MenuItemProps) => {
 
   const handleOptionChange = (option: { id: string, name: string, price: number }, checked: boolean) => {
     if (checked) {
-      setSelectedOptions(prev => [...prev, option]);
+      setSelectedOptions(prev => [...prev, {
+        ingredientId: option.id,
+        name: option.name,
+        price: option.price
+      }]);
     } else {
-      setSelectedOptions(prev => prev.filter(o => o.id !== option.id));
+      setSelectedOptions(prev => prev.filter(o => o.ingredientId !== option.id));
     }
   };
 
   const handleAddToCart = () => {
-    const customItem = {
-      ...item,
+    const cartItem = {
+      productId: item.id,
+      name: item.name,
+      price: item.price,
       quantity,
+      image: item.image,
       selectedOptions
     };
     
-    addToCart(customItem);
+    addItem(cartItem);
     toast.success('Item adicionado ao carrinho!');
   };
 
@@ -61,11 +68,6 @@ const MenuItemBR = ({ item }: MenuItemProps) => {
           alt={item.name}
           className="w-full h-full object-cover transition-transform hover:scale-105 duration-300"
         />
-        {item.discount > 0 && (
-          <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-semibold">
-            {item.discount}% OFF
-          </div>
-        )}
       </div>
       
       <div className="p-4">
@@ -76,11 +78,6 @@ const MenuItemBR = ({ item }: MenuItemProps) => {
           </div>
           <div className="text-right">
             <div className="font-bold">R${item.price.toFixed(2)}</div>
-            {item.discount > 0 && (
-              <div className="text-xs line-through text-muted-foreground">
-                R${(item.price / (1 - item.discount / 100)).toFixed(2)}
-              </div>
-            )}
           </div>
         </div>
         
