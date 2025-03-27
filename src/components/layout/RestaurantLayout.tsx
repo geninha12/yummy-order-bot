@@ -9,7 +9,8 @@ import {
   Settings, 
   LogOut, 
   ChevronLeft, 
-  ChevronRight 
+  ChevronRight,
+  MessageSquare
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
@@ -39,6 +40,7 @@ const RestaurantLayout: React.FC<RestaurantLayoutProps> = ({ children }) => {
     { name: 'Gerenciar Cardápio', path: '/restaurante/cardapio', icon: MenuIcon },
     { name: 'Pedidos', path: '/restaurante/pedidos', icon: ShoppingBag },
     { name: 'Relatórios', path: '/restaurante/relatorios', icon: BarChart3 },
+    { name: 'WhatsApp', path: '/restaurante/whatsapp', icon: MessageSquare },
     { name: 'Configurações', path: '/restaurante/configuracoes', icon: Settings },
   ];
 
