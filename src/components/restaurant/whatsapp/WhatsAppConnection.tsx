@@ -9,10 +9,13 @@ import { useWhatsApp } from '@/context/WhatsAppContext';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 const connectionSchema = z.object({
   token: z.string().min(1, { message: 'Token é obrigatório' }),
-  phoneNumberId: z.string().min(1, { message: 'ID do número é obrigatório' })
+  phoneNumberId: z.string().min(1, { message: 'ID do número é obrigatório' }),
+  appId: z.string().optional(),
+  appSecret: z.string().optional(),
 });
 
 const WhatsAppConnection: React.FC = () => {
@@ -23,12 +26,19 @@ const WhatsAppConnection: React.FC = () => {
     resolver: zodResolver(connectionSchema),
     defaultValues: {
       token: '',
-      phoneNumberId: ''
+      phoneNumberId: '',
+      appId: '',
+      appSecret: ''
     }
   });
 
   const onSubmit = async (values: z.infer<typeof connectionSchema>) => {
-    await connectWhatsApp(values.token, values.phoneNumberId);
+    await connectWhatsApp(
+      values.token, 
+      values.phoneNumberId,
+      values.appId || undefined,
+      values.appSecret || undefined
+    );
     setIsEditing(false);
   };
 
@@ -124,6 +134,45 @@ const WhatsAppConnection: React.FC = () => {
                 </FormItem>
               )}
             />
+            
+            <Accordion type="single" collapsible className="w-full">
+              <AccordionItem value="webhooks-config">
+                <AccordionTrigger className="text-sm font-medium">
+                  Configurações Avançadas (Webhooks)
+                </AccordionTrigger>
+                <AccordionContent>
+                  <div className="space-y-4 pt-2">
+                    <FormField
+                      control={form.control}
+                      name="appId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>ID do Aplicativo</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="12345678901234" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="appSecret"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Chave Secreta do Aplicativo</FormLabel>
+                          <FormControl>
+                            <Input {...field} type="password" placeholder="abcdef1234567890" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
             
             {connectionError && (
               <div className="text-destructive text-sm mt-2">{connectionError}</div>

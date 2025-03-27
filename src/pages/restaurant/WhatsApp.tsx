@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import RestaurantLayout from '@/components/layout/RestaurantLayout';
 import WhatsAppConnection from '@/components/restaurant/whatsapp/WhatsAppConnection';
 import TestMessage from '@/components/restaurant/whatsapp/TestMessage';
+import WebhookInfo from '@/components/restaurant/whatsapp/WebhookInfo';
 import FlowList from '@/components/restaurant/whatsapp/FlowList';
 import FlowEditor from '@/components/restaurant/whatsapp/FlowEditor';
 import { useWhatsApp, WhatsAppFlow } from '@/context/WhatsAppContext';
@@ -59,38 +60,44 @@ const WhatsApp: React.FC = () => {
         </div>
 
         {isConnected && (
-          <Tabs 
-            defaultValue="flows" 
-            value={activeTab} 
-            onValueChange={setActiveTab}
-            className="w-full"
-          >
-            <TabsList className="mb-4">
-              <TabsTrigger value="flows">Fluxos de Mensagens</TabsTrigger>
-              <TabsTrigger value="templates">Templates</TabsTrigger>
-              <TabsTrigger value="analytics">Análises</TabsTrigger>
-            </TabsList>
+          <>
+            <div className="mb-4">
+              <WebhookInfo />
+            </div>
             
-            <TabsContent value="flows">
-              <FlowList onEdit={handleEditFlow} onAdd={handleNewFlow} />
-            </TabsContent>
-            
-            <TabsContent value="templates">
-              <div className="flex items-center justify-center h-64 bg-muted/30 rounded-lg border border-dashed">
-                <p className="text-muted-foreground">
-                  Gerenciamento de templates em breve...
-                </p>
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="analytics">
-              <div className="flex items-center justify-center h-64 bg-muted/30 rounded-lg border border-dashed">
-                <p className="text-muted-foreground">
-                  Análises e relatórios em breve...
-                </p>
-              </div>
-            </TabsContent>
-          </Tabs>
+            <Tabs 
+              defaultValue="flows" 
+              value={activeTab} 
+              onValueChange={setActiveTab}
+              className="w-full"
+            >
+              <TabsList className="mb-4">
+                <TabsTrigger value="flows">Fluxos de Mensagens</TabsTrigger>
+                <TabsTrigger value="templates">Templates</TabsTrigger>
+                <TabsTrigger value="analytics">Análises</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="flows">
+                <FlowList onEdit={handleEditFlow} onAdd={handleNewFlow} />
+              </TabsContent>
+              
+              <TabsContent value="templates">
+                <div className="flex items-center justify-center h-64 bg-muted/30 rounded-lg border border-dashed">
+                  <p className="text-muted-foreground">
+                    Gerenciamento de templates em breve...
+                  </p>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="analytics">
+                <div className="flex items-center justify-center h-64 bg-muted/30 rounded-lg border border-dashed">
+                  <p className="text-muted-foreground">
+                    Análises e relatórios em breve...
+                  </p>
+                </div>
+              </TabsContent>
+            </Tabs>
+          </>
         )}
       </div>
     </RestaurantLayout>

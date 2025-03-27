@@ -43,7 +43,7 @@ type WhatsAppContextType = {
   accountInfo: { id: string; name: string } | null;
   flows: WhatsAppFlow[];
   contacts: WhatsAppContact[];
-  connectWhatsApp: (token: string, phoneNumberId: string) => Promise<void>;
+  connectWhatsApp: (token: string, phoneNumberId: string, appId?: string, appSecret?: string) => Promise<void>;
   disconnectWhatsApp: () => void;
   createFlow: (flow: Omit<WhatsAppFlow, 'id' | 'createdAt' | 'updatedAt'>) => Promise<WhatsAppFlow>;
   updateFlow: (id: string, updates: Partial<Omit<WhatsAppFlow, 'id' | 'createdAt' | 'updatedAt'>>) => Promise<WhatsAppFlow>;
@@ -146,27 +146,37 @@ export const WhatsAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [contacts, setContacts] = useState<WhatsAppContact[]>(sampleContacts);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [phoneNumberId, setPhoneNumberId] = useState<string | null>(null);
+  const [appId, setAppId] = useState<string | null>(null);
+  const [appSecret, setAppSecret] = useState<string | null>(null);
 
   // Verificar se existem credenciais armazenadas ao iniciar
   useEffect(() => {
     const storedToken = localStorage.getItem('whatsapp_token');
     const storedPhoneNumberId = localStorage.getItem('whatsapp_phone_id');
+    const storedAppId = localStorage.getItem('whatsapp_app_id');
+    const storedAppSecret = localStorage.getItem('whatsapp_app_secret');
     
     if (storedToken && storedPhoneNumberId) {
       setAccessToken(storedToken);
       setPhoneNumberId(storedPhoneNumberId);
+      if (storedAppId) setAppId(storedAppId);
+      if (storedAppSecret) setAppSecret(storedAppSecret);
       
-      connectWhatsApp(storedToken, storedPhoneNumberId).catch(() => {
+      connectWhatsApp(storedToken, storedPhoneNumberId, storedAppId || undefined, storedAppSecret || undefined).catch(() => {
         // Tokens podem ter expirado
         localStorage.removeItem('whatsapp_token');
         localStorage.removeItem('whatsapp_phone_id');
+        localStorage.removeItem('whatsapp_app_id');
+        localStorage.removeItem('whatsapp_app_secret');
         setAccessToken(null);
         setPhoneNumberId(null);
+        setAppId(null);
+        setAppSecret(null);
       });
     }
   }, []);
 
-  const connectWhatsApp = async (token: string, phoneId: string) => {
+  const connectWhatsApp = async (token: string, phoneId: string, applicationId?: string, applicationSecret?: string) => {
     setIsLoading(true);
     setConnectionError(null);
     
@@ -190,6 +200,10 @@ export const WhatsAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setIsConnected(true);
       setAccessToken(token);
       setPhoneNumberId(phoneId);
+      
+      if (applicationId) setAppId(applicationId);
+      if (applicationSecret) setAppSecret(applicationSecret);
+      
       setAccountInfo({
         id: phoneId,
         name: data.verified_name || 'WhatsApp Business Account'
@@ -198,6 +212,8 @@ export const WhatsAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       // Armazenar credenciais para uso futuro
       localStorage.setItem('whatsapp_token', token);
       localStorage.setItem('whatsapp_phone_id', phoneId);
+      if (applicationId) localStorage.setItem('whatsapp_app_id', applicationId);
+      if (applicationSecret) localStorage.setItem('whatsapp_app_secret', applicationSecret);
       
       toast.success('WhatsApp conectado com sucesso!');
     } catch (error) {
@@ -215,8 +231,12 @@ export const WhatsAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setAccountInfo(null);
     setAccessToken(null);
     setPhoneNumberId(null);
+    setAppId(null);
+    setAppSecret(null);
     localStorage.removeItem('whatsapp_token');
     localStorage.removeItem('whatsapp_phone_id');
+    localStorage.removeItem('whatsapp_app_id');
+    localStorage.removeItem('whatsapp_app_secret');
     toast.success('WhatsApp desconectado com sucesso!');
   };
 
