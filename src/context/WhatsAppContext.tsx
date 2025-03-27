@@ -144,6 +144,8 @@ export const WhatsAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [accountInfo, setAccountInfo] = useState<{ id: string; name: string } | null>(null);
   const [flows, setFlows] = useState<WhatsAppFlow[]>(sampleFlows);
   const [contacts, setContacts] = useState<WhatsAppContact[]>(sampleContacts);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [phoneNumberId, setPhoneNumberId] = useState<string | null>(null);
 
   // Verificar se existem credenciais armazenadas ao iniciar
   useEffect(() => {
@@ -151,43 +153,56 @@ export const WhatsAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const storedPhoneNumberId = localStorage.getItem('whatsapp_phone_id');
     
     if (storedToken && storedPhoneNumberId) {
+      setAccessToken(storedToken);
+      setPhoneNumberId(storedPhoneNumberId);
+      
       connectWhatsApp(storedToken, storedPhoneNumberId).catch(() => {
         // Tokens podem ter expirado
         localStorage.removeItem('whatsapp_token');
         localStorage.removeItem('whatsapp_phone_id');
+        setAccessToken(null);
+        setPhoneNumberId(null);
       });
     }
   }, []);
 
-  const connectWhatsApp = async (token: string, phoneNumberId: string) => {
+  const connectWhatsApp = async (token: string, phoneId: string) => {
     setIsLoading(true);
     setConnectionError(null);
     
     try {
-      // Em uma implementação real, aqui faríamos uma chamada à API do WhatsApp
-      // para verificar as credenciais
+      // Faz um teste de conexão chamando a API de informações da conta
+      const response = await fetch(
+        `https://graph.facebook.com/v19.0/${phoneId}?fields=verified_name,status,quality_rating`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
       
-      // Simulando uma chamada à API
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const data = await response.json();
       
-      // Verificação simulada das credenciais
-      if (token && phoneNumberId) {
-        setIsConnected(true);
-        setAccountInfo({
-          id: phoneNumberId,
-          name: 'YummyOrder WhatsApp Business'
-        });
-        
-        // Armazenar credenciais para uso futuro
-        localStorage.setItem('whatsapp_token', token);
-        localStorage.setItem('whatsapp_phone_id', phoneNumberId);
-        
-        toast.success('WhatsApp conectado com sucesso!');
-      } else {
-        throw new Error('Credenciais inválidas');
+      if (data.error) {
+        throw new Error(data.error.message || 'Error connecting to WhatsApp API');
       }
+      
+      setIsConnected(true);
+      setAccessToken(token);
+      setPhoneNumberId(phoneId);
+      setAccountInfo({
+        id: phoneId,
+        name: data.verified_name || 'WhatsApp Business Account'
+      });
+      
+      // Armazenar credenciais para uso futuro
+      localStorage.setItem('whatsapp_token', token);
+      localStorage.setItem('whatsapp_phone_id', phoneId);
+      
+      toast.success('WhatsApp conectado com sucesso!');
     } catch (error) {
-      setConnectionError('Não foi possível conectar ao WhatsApp. Verifique suas credenciais.');
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      setConnectionError(`Não foi possível conectar ao WhatsApp: ${errorMessage}`);
       toast.error('Erro ao conectar com WhatsApp');
       console.error('Erro ao conectar com WhatsApp:', error);
     } finally {
@@ -198,6 +213,8 @@ export const WhatsAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const disconnectWhatsApp = () => {
     setIsConnected(false);
     setAccountInfo(null);
+    setAccessToken(null);
+    setPhoneNumberId(null);
     localStorage.removeItem('whatsapp_token');
     localStorage.removeItem('whatsapp_phone_id');
     toast.success('WhatsApp desconectado com sucesso!');
@@ -253,13 +270,46 @@ export const WhatsAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const sendTestMessage = async (phoneNumber: string, message: string): Promise<void> => {
+    if (!accessToken || !phoneNumberId) {
+      throw new Error('WhatsApp API not connected');
+    }
+    
     setIsLoading(true);
     
     try {
-      // Simulando envio de mensagem
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Garante que o número está formatado corretamente
+      if (!phoneNumber.startsWith('55')) {
+        phoneNumber = `55${phoneNumber}`;
+      }
       
-      toast.success(`Mensagem enviada para ${phoneNumber}`);
+      // Remove qualquer '+' do início do número
+      phoneNumber = phoneNumber.replace(/^\+/, '');
+      
+      console.log(`Enviando mensagem para: ${phoneNumber}`);
+      
+      const response = await fetch(
+        `https://graph.facebook.com/v19.0/${phoneNumberId}/messages`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            messaging_product: 'whatsapp',
+            to: phoneNumber,
+            type: 'text',
+            text: { body: message }
+          }),
+        }
+      );
+      
+      const data = await response.json();
+      console.log('Resposta da API do WhatsApp:', data);
+      
+      if (data.error) {
+        throw new Error(data.error.message || 'Error sending WhatsApp message');
+      }
       
       // Adicionando ou atualizando um contato na lista
       const existingContactIndex = contacts.findIndex(contact => contact.phoneNumber === phoneNumber);
@@ -283,8 +333,8 @@ export const WhatsAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         ]);
       }
     } catch (error) {
-      toast.error('Erro ao enviar mensagem');
       console.error('Erro ao enviar mensagem:', error);
+      throw error; // Propaga o erro para ser tratado no componente
     } finally {
       setIsLoading(false);
     }

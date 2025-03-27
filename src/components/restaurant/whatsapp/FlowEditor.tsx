@@ -17,6 +17,7 @@ import { useForm } from 'react-hook-form';
 import { Form, FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from '@/components/ui/form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { toast } from 'sonner';
 
 interface FlowEditorProps {
   flow?: WhatsAppFlow;
@@ -34,6 +35,7 @@ const FlowEditor: React.FC<FlowEditorProps> = ({ flow, onBack }) => {
   const { createFlow, updateFlow } = useWhatsApp();
   const [nodes, setNodes] = useState(flow?.nodes || []);
   const [edges, setEdges] = useState(flow?.edges || []);
+  const [isSaving, setIsSaving] = useState(false);
   
   const form = useForm<z.infer<typeof flowSchema>>({
     resolver: zodResolver(flowSchema),
@@ -47,15 +49,20 @@ const FlowEditor: React.FC<FlowEditorProps> = ({ flow, onBack }) => {
 
   const handleSaveFlow = async (formValues: z.infer<typeof flowSchema>) => {
     if (nodes.length === 0) {
-      alert('Seu fluxo precisa ter pelo menos uma mensagem. Adicione elementos no editor de fluxo.');
+      toast.error('Seu fluxo precisa ter pelo menos uma mensagem. Adicione elementos no editor de fluxo.');
       return;
     }
+    
+    setIsSaving(true);
     
     try {
       if (flow) {
         // Atualizar fluxo existente
         await updateFlow(flow.id, {
-          ...formValues,
+          name: formValues.name,
+          description: formValues.description,
+          trigger: formValues.trigger,
+          active: formValues.active,
           nodes,
           edges
         });
@@ -70,9 +77,13 @@ const FlowEditor: React.FC<FlowEditorProps> = ({ flow, onBack }) => {
           edges
         });
       }
+      toast.success(`Fluxo ${flow ? 'atualizado' : 'criado'} com sucesso!`);
       onBack();
     } catch (error) {
       console.error('Erro ao salvar fluxo:', error);
+      toast.error('Erro ao salvar fluxo. Verifique o console para mais detalhes.');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -93,9 +104,12 @@ const FlowEditor: React.FC<FlowEditorProps> = ({ flow, onBack }) => {
             {flow ? `Editar: ${flow.name}` : 'Novo Fluxo de Mensagens'}
           </h2>
         </div>
-        <Button onClick={form.handleSubmit(handleSaveFlow)}>
+        <Button 
+          onClick={form.handleSubmit(handleSaveFlow)} 
+          disabled={isSaving}
+        >
           <Save className="h-4 w-4 mr-2" />
-          Salvar Fluxo
+          {isSaving ? 'Salvando...' : 'Salvar Fluxo'}
         </Button>
       </div>
       
