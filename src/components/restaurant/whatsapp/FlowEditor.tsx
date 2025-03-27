@@ -62,7 +62,10 @@ const FlowEditor: React.FC<FlowEditorProps> = ({ flow, onBack }) => {
       } else {
         // Criar novo fluxo
         await createFlow({
-          ...formValues,
+          name: formValues.name,
+          description: formValues.description,
+          trigger: formValues.trigger,
+          active: formValues.active,
           nodes,
           edges
         });
