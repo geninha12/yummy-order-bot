@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Search } from 'lucide-react';
 import Layout from '@/components/layout/Layout';
-import MenuItem from '@/components/customer/MenuItem';
+import MenuItemBR from '@/components/customer/MenuItemBR';
 import { useMenu } from '@/context/MenuContext';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -26,10 +26,10 @@ const Menu = () => {
     <Layout>
       <div className="container mx-auto py-8 px-4 animate-fade-in">
         <div className="text-center mb-8">
-          <h1 className="heading-lg mb-2">Our Menu</h1>
+          <h1 className="heading-lg mb-2">Nosso Cardápio</h1>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Explore our wide range of delicious dishes, made with the freshest ingredients
-            and available for delivery straight to your doorstep.
+            Explore nossa ampla variedade de pratos deliciosos, feitos com ingredientes frescos
+            e disponíveis para entrega diretamente em sua casa.
           </p>
         </div>
 
@@ -39,7 +39,7 @@ const Menu = () => {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
-                placeholder="Search menu..."
+                placeholder="Pesquisar no cardápio..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
@@ -52,7 +52,7 @@ const Menu = () => {
                 onClick={() => setActiveCategory('all')}
                 className="whitespace-nowrap"
               >
-                All Items
+                Todos os Itens
               </Button>
               {categories.map((category) => (
                 <Button
@@ -73,12 +73,12 @@ const Menu = () => {
         {filteredItems.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredItems.map((item) => (
-              <MenuItem key={item.id} item={item} />
+              <MenuItemBR key={item.id} item={item} />
             ))}
           </div>
         ) : (
           <div className="text-center py-12">
-            <p className="text-muted-foreground">No menu items found. Please try another search.</p>
+            <p className="text-muted-foreground">Nenhum item encontrado. Por favor, tente outra pesquisa.</p>
           </div>
         )}
       </div>

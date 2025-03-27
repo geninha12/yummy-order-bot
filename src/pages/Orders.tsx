@@ -14,7 +14,7 @@ const Orders = () => {
   const userOrders = user ? getOrdersByUser(user.id) : [];
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+    return new Date(dateString).toLocaleDateString('pt-BR', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -40,51 +40,68 @@ const Orders = () => {
     }
   };
 
+  const translateStatus = (status: string) => {
+    switch (status) {
+      case 'placed':
+        return 'Recebido';
+      case 'preparing':
+        return 'Preparando';
+      case 'ready':
+        return 'Pronto';
+      case 'delivered':
+        return 'Entregue';
+      case 'cancelled':
+        return 'Cancelado';
+      default:
+        return status;
+    }
+  };
+
   return (
     <Layout>
       <div className="container mx-auto py-8 px-4 animate-fade-in">
-        <h1 className="heading-lg mb-6">Your Orders</h1>
+        <h1 className="heading-lg mb-6">Seus Pedidos</h1>
 
         {userOrders.length > 0 ? (
           <div className="grid gap-6">
             {userOrders.map((order) => (
               <Link 
                 key={order.id} 
-                to={`/orders/${order.id}`}
+                to={`/pedidos/${order.id}`}
                 className="block bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow"
               >
                 <div className="p-6">
                   <div className="flex flex-col md:flex-row md:items-center justify-between mb-4">
                     <div className="mb-2 md:mb-0">
-                      <div className="text-sm text-muted-foreground">Order ID</div>
+                      <div className="text-sm text-muted-foreground">Pedido Nº</div>
                       <div className="font-medium">#{order.id.slice(-6)}</div>
                     </div>
                     
                     <div className="mb-2 md:mb-0">
-                      <div className="text-sm text-muted-foreground">Date</div>
+                      <div className="text-sm text-muted-foreground">Data</div>
                       <div className="font-medium">{formatDate(order.placedAt)}</div>
                     </div>
                     
                     <div className="mb-2 md:mb-0">
                       <div className="text-sm text-muted-foreground">Total</div>
-                      <div className="font-medium">${order.total.toFixed(2)}</div>
+                      <div className="font-medium">R${order.total.toFixed(2)}</div>
                     </div>
                     
                     <div className="mb-2 md:mb-0">
                       <div className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
-                        {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                        {translateStatus(order.status)}
                       </div>
                     </div>
                     
                     <div className="md:ml-4">
                       <Button variant="ghost" size="sm">
-                        View Details <ArrowRight className="ml-1 h-4 w-4" />
+                        Ver Detalhes <ArrowRight className="ml-1 h-4 w-4" />
                       </Button>
                     </div>
                   </div>
                   
                   <div className="border-t pt-4">
-                    <div className="text-sm text-muted-foreground mb-2">Items</div>
+                    <div className="text-sm text-muted-foreground mb-2">Itens</div>
                     <div className="text-sm">
                       {order.items.map((item, index) => (
                         <span key={item.id}>
@@ -103,12 +120,12 @@ const Orders = () => {
             <div className="bg-muted inline-flex rounded-full p-4 mb-4">
               <ShoppingBag className="h-8 w-8 text-muted-foreground" />
             </div>
-            <h2 className="heading-md mb-2">No orders yet</h2>
+            <h2 className="heading-md mb-2">Nenhum pedido ainda</h2>
             <p className="text-muted-foreground mb-6">
-              You haven't placed any orders yet. Start ordering delicious food now!
+              Você ainda não fez nenhum pedido. Comece a pedir comida deliciosa agora!
             </p>
-            <Link to="/menu">
-              <Button size="lg">Browse Menu</Button>
+            <Link to="/cardapio">
+              <Button size="lg">Ver Cardápio</Button>
             </Link>
           </div>
         )}

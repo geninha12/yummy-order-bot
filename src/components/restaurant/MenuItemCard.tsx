@@ -58,7 +58,7 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({
             <CardTitle>{item.name}</CardTitle>
             <CardDescription className="mt-1">{item.category}</CardDescription>
           </div>
-          <div className="text-lg font-bold">${item.price.toFixed(2)}</div>
+          <div className="text-lg font-bold">R${item.price.toFixed(2)}</div>
         </div>
       </CardHeader>
       <CardContent className="p-4 pt-0">
@@ -67,7 +67,7 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({
         {item.ingredients.length > 0 && (
           <div className="mt-3">
             <h4 className="text-xs font-medium uppercase text-muted-foreground mb-2">
-              Available Add-ons
+              Adicionais Disponíveis
             </h4>
             <div className="text-sm">
               {item.ingredients.slice(0, 3).map((ing, index) => (
@@ -77,7 +77,7 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({
                 </span>
               ))}
               {item.ingredients.length > 3 && (
-                <span className="text-xs text-muted-foreground"> +{item.ingredients.length - 3} more</span>
+                <span className="text-xs text-muted-foreground"> +{item.ingredients.length - 3} mais</span>
               )}
             </div>
           </div>
@@ -95,12 +95,12 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({
           {item.available ? (
             <>
               <ToggleRight className="h-4 w-4" />
-              <span>Available</span>
+              <span>Disponível</span>
             </>
           ) : (
             <>
               <ToggleLeft className="h-4 w-4" />
-              <span>Unavailable</span>
+              <span>Indisponível</span>
             </>
           )}
         </Button>

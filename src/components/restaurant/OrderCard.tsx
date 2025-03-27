@@ -24,7 +24,7 @@ interface OrderCardProps {
 const OrderCard: React.FC<OrderCardProps> = ({ order, onUpdateStatus }) => {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return new Intl.DateTimeFormat('en-US', {
+    return new Intl.DateTimeFormat('pt-BR', {
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
@@ -41,20 +41,25 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, onUpdateStatus }) => {
   };
 
   const statusOptions: { value: OrderStatus; label: string }[] = [
-    { value: 'placed', label: 'Placed' },
-    { value: 'preparing', label: 'Preparing' },
-    { value: 'ready', label: 'Ready' },
-    { value: 'delivered', label: 'Delivered' },
-    { value: 'cancelled', label: 'Cancelled' }
+    { value: 'placed', label: 'Recebido' },
+    { value: 'preparing', label: 'Preparando' },
+    { value: 'ready', label: 'Pronto' },
+    { value: 'delivered', label: 'Entregue' },
+    { value: 'cancelled', label: 'Cancelado' }
   ];
+
+  const translateStatus = (status: OrderStatus) => {
+    const option = statusOptions.find(opt => opt.value === status);
+    return option ? option.label : status;
+  };
 
   return (
     <Card className="animate-scale-in">
       <CardHeader className="p-4 pb-0">
         <div className="flex justify-between items-center mb-2">
-          <div className="text-sm font-medium">Order #{order.id.slice(-4)}</div>
+          <div className="text-sm font-medium">Pedido #{order.id.slice(-4)}</div>
           <div className={`text-xs px-2 py-1 rounded-full font-medium ${statusColors[order.status]}`}>
-            {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+            {translateStatus(order.status)}
           </div>
         </div>
         <div className="flex justify-between items-start">
@@ -63,7 +68,7 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, onUpdateStatus }) => {
             <p className="text-xs text-muted-foreground">{order.userPhone}</p>
           </div>
           <div className="text-right">
-            <p className="text-sm font-bold">${order.total.toFixed(2)}</p>
+            <p className="text-sm font-bold">R${order.total.toFixed(2)}</p>
             <p className="text-xs text-muted-foreground">{formatDate(order.placedAt)}</p>
           </div>
         </div>
@@ -83,7 +88,7 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, onUpdateStatus }) => {
                   )}
                 </div>
               </div>
-              <div className="text-sm">${((item.price + item.selectedOptions.reduce((sum, opt) => sum + opt.price, 0)) * item.quantity).toFixed(2)}</div>
+              <div className="text-sm">R${((item.price + item.selectedOptions.reduce((sum, opt) => sum + opt.price, 0)) * item.quantity).toFixed(2)}</div>
             </div>
           ))}
         </div>
@@ -91,22 +96,22 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, onUpdateStatus }) => {
         <div className="text-xs space-y-1 border-t border-dashed border-gray-200 pt-2">
           <div className="flex justify-between">
             <span>Subtotal:</span>
-            <span>${order.subtotal.toFixed(2)}</span>
+            <span>R${order.subtotal.toFixed(2)}</span>
           </div>
           <div className="flex justify-between">
-            <span>Delivery:</span>
-            <span>${order.deliveryFee.toFixed(2)}</span>
+            <span>Entrega:</span>
+            <span>R${order.deliveryFee.toFixed(2)}</span>
           </div>
           <div className="flex justify-between font-medium">
             <span>Total:</span>
-            <span>${order.total.toFixed(2)}</span>
+            <span>R${order.total.toFixed(2)}</span>
           </div>
         </div>
       </CardContent>
       <CardFooter className="p-4 pt-0 flex flex-col gap-2">
         <div className="w-full">
           <div className="text-xs font-medium uppercase text-muted-foreground mb-1">
-            Update Status
+            Atualizar Status
           </div>
           <Select
             defaultValue={order.status}
@@ -132,11 +137,11 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, onUpdateStatus }) => {
           onClick={() => {
             // Placeholder for WhatsApp integration
             const phone = order.userPhone?.replace(/[^0-9]/g, '') || '';
-            const message = `Hi ${order.userName}, your order #${order.id.slice(-4)} status has been updated to: ${order.status.toUpperCase()}`;
+            const message = `Olá ${order.userName}, o status do seu pedido #${order.id.slice(-4)} foi atualizado para: ${translateStatus(order.status)}`;
             window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`);
           }}
         >
-          Contact via WhatsApp
+          Contato via WhatsApp
         </Button>
       </CardFooter>
     </Card>
