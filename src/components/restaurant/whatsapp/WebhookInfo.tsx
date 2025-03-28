@@ -1,16 +1,18 @@
 
 import React, { useState } from 'react';
-import { Info, Copy, RefreshCw } from 'lucide-react';
+import { Info, Copy, RefreshCw, ExternalLink, CheckCircle2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useWhatsApp } from '@/context/WhatsAppContext';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const WebhookInfo: React.FC = () => {
   const { isConnected, generateVerificationToken, verificationToken } = useWhatsApp();
   const [isGeneratingToken, setIsGeneratingToken] = useState(false);
+  const [webhookStatus, setWebhookStatus] = useState<'pending' | 'success' | 'error'>('pending');
   
   if (!isConnected) {
     return null;
@@ -37,6 +39,27 @@ const WebhookInfo: React.FC = () => {
     } finally {
       setIsGeneratingToken(false);
     }
+  };
+
+  const handleTestWebhook = () => {
+    toast.info('Realizando teste de webhook...');
+    
+    // Simular uma solicitação GET para o webhook com o token de verificação
+    fetch(`${webhookUrl}?hub.mode=subscribe&hub.challenge=challenge_code&hub.verify_token=${verificationToken}`)
+      .then(response => {
+        if (response.ok) {
+          setWebhookStatus('success');
+          toast.success('Webhook respondeu corretamente!');
+        } else {
+          setWebhookStatus('error');
+          toast.error('Falha na verificação do webhook');
+        }
+      })
+      .catch(error => {
+        console.error('Erro ao testar webhook:', error);
+        setWebhookStatus('error');
+        toast.error('Erro ao testar webhook');
+      });
   };
 
   return (
@@ -112,6 +135,26 @@ const WebhookInfo: React.FC = () => {
             Este token é usado para verificar a autenticidade das solicitações de webhook. 
             Forneça-o na configuração do webhook no painel do Facebook Developers.
           </p>
+          
+          {verificationToken && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="mt-2" 
+              onClick={handleTestWebhook}
+            >
+              Testar Configuração do Webhook
+            </Button>
+          )}
+          
+          {webhookStatus === 'success' && (
+            <Alert className="mt-2 bg-green-50 border-green-200">
+              <CheckCircle2 className="h-4 w-4 text-green-500" />
+              <AlertDescription className="text-green-700">
+                Webhook configurado corretamente! O endpoint está respondendo às solicitações de verificação.
+              </AlertDescription>
+            </Alert>
+          )}
         </div>
 
         <div>
@@ -129,6 +172,17 @@ const WebhookInfo: React.FC = () => {
           <p className="text-xs text-blue-700">
             <strong>Nota:</strong> Você precisará de um domínio público para receber webhooks. 
             Em ambiente de desenvolvimento, utilize ferramentas como ngrok para expor seu servidor local.
+          </p>
+          <p className="text-xs text-blue-700 mt-2">
+            <a 
+              href="https://developers.facebook.com/docs/whatsapp/webhook" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="flex items-center hover:underline"
+            >
+              <ExternalLink className="h-3 w-3 mr-1" />
+              Documentação do Webhook do WhatsApp
+            </a>
           </p>
         </div>
       </CardContent>

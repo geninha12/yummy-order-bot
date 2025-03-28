@@ -30,7 +30,7 @@ interface CheckoutFormData {
 const Checkout = () => {
   const { user } = useAuth();
   const { items, subtotal, deliveryFee, total, clearCart } = useCart();
-  const { placeOrder } = useOrders();
+  const { placeOrder, getOrderById } = useOrders();
   const navigate = useNavigate();
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -80,6 +80,17 @@ const Checkout = () => {
             : 'Cash on Delivery',
           notes: data.notes,
         });
+
+        // Buscar o pedido completo para enviar para impressão
+        const newOrder = getOrderById(orderId);
+        
+        if (newOrder) {
+          // Disparar um evento para notificar sobre o novo pedido
+          const newOrderEvent = new CustomEvent('new-order-received', { 
+            detail: newOrder 
+          });
+          window.dispatchEvent(newOrderEvent);
+        }
 
         clearCart();
         toast.success('Order placed successfully!');

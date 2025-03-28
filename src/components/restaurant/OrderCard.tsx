@@ -15,13 +15,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Printer } from 'lucide-react';
 
 interface OrderCardProps {
   order: Order;
   onUpdateStatus: (id: string, status: OrderStatus) => void;
+  onPrint?: (id: string) => void;
 }
 
-const OrderCard: React.FC<OrderCardProps> = ({ order, onUpdateStatus }) => {
+const OrderCard: React.FC<OrderCardProps> = ({ order, onUpdateStatus, onPrint }) => {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return new Intl.DateTimeFormat('pt-BR', {
@@ -130,19 +132,33 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, onUpdateStatus }) => {
           </Select>
         </div>
         
-        <Button 
-          variant="outline" 
-          size="sm" 
-          className="w-full mt-2"
-          onClick={() => {
-            // Placeholder for WhatsApp integration
-            const phone = order.userPhone?.replace(/[^0-9]/g, '') || '';
-            const message = `Olá ${order.userName}, o status do seu pedido #${order.id.slice(-4)} foi atualizado para: ${translateStatus(order.status)}`;
-            window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`);
-          }}
-        >
-          Contato via WhatsApp
-        </Button>
+        <div className="flex gap-2 mt-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="flex-1"
+            onClick={() => {
+              // Placeholder para integração com WhatsApp
+              const phone = order.userPhone?.replace(/[^0-9]/g, '') || '';
+              const message = `Olá ${order.userName}, o status do seu pedido #${order.id.slice(-4)} foi atualizado para: ${translateStatus(order.status)}`;
+              window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`);
+            }}
+          >
+            Contato via WhatsApp
+          </Button>
+          
+          {onPrint && (
+            <Button 
+              variant="secondary" 
+              size="sm" 
+              className="flex items-center gap-1"
+              onClick={() => onPrint(order.id)}
+            >
+              <Printer className="h-4 w-4" />
+              Imprimir
+            </Button>
+          )}
+        </div>
       </CardFooter>
     </Card>
   );

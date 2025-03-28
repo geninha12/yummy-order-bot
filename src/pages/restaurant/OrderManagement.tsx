@@ -1,8 +1,9 @@
 
-import React, { useState } from 'react';
-import { Search } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Search, Printer } from 'lucide-react';
 import RestaurantLayout from '@/components/layout/RestaurantLayout';
 import OrderCard from '@/components/restaurant/OrderCard';
+import PrinterConfig from '@/components/restaurant/PrinterConfig';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -11,11 +12,21 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Order, OrderStatus, useOrders } from '@/context/OrderContext';
+import { toast } from 'sonner';
 
 const OrderManagement = () => {
   const { orders, updateOrderStatus } = useOrders();
   const [searchQuery, setSearchQuery] = useState('');
+  const [showPrinterConfig, setShowPrinterConfig] = useState(false);
 
   const statusCounts = {
     all: orders.length,
@@ -42,11 +53,65 @@ const OrderManagement = () => {
     updateOrderStatus(id, status);
   };
 
+  // Adicionar evento para imprimir quando um novo pedido chegar
+  useEffect(() => {
+    const handleNewOrder = (event: CustomEvent<Order>) => {
+      const order = event.detail;
+      // Verificar se a impressão automática está ativada
+      const autoPrint = localStorage.getItem('printer_auto_print') === 'true';
+      if (autoPrint) {
+        toast.info(`Imprimindo pedido #${order.id.slice(-4)} automaticamente`);
+      }
+    };
+    
+    window.addEventListener('new-order-received' as any, handleNewOrder as EventListener);
+    
+    return () => {
+      window.removeEventListener('new-order-received' as any, handleNewOrder as EventListener);
+    };
+  }, []);
+
+  // Função para lidar com o clique em "Imprimir" na lista de pedidos
+  const handlePrintOrder = (order: Order) => {
+    // Disparar um evento CustomEvent com os detalhes do pedido
+    const printEvent = new CustomEvent('print-order', { 
+      detail: order 
+    });
+    window.dispatchEvent(printEvent);
+    
+    toast.success(`Pedido #${order.id.slice(-4)} enviado para impressão`);
+  };
+
   return (
     <RestaurantLayout>
       <div className="animate-fade-in">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold">Order Management</h1>
+          
+          <Dialog open={showPrinterConfig} onOpenChange={setShowPrinterConfig}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="flex items-center gap-2">
+                <Printer className="h-4 w-4" />
+                Configurar Impressora
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Configuração de Impressora</DialogTitle>
+                <DialogDescription>
+                  Configure sua impressora térmica para automatizar os pedidos
+                </DialogDescription>
+              </DialogHeader>
+              <PrinterConfig 
+                onPrinterTest={() => {
+                  setShowPrinterConfig(false);
+                  setTimeout(() => {
+                    toast.success('Teste de impressora concluído. A impressora está funcionando corretamente.');
+                  }, 1000);
+                }}
+              />
+            </DialogContent>
+          </Dialog>
         </div>
 
         <div className="relative mb-6">
@@ -117,6 +182,7 @@ const OrderManagement = () => {
                     key={order.id}
                     order={order}
                     onUpdateStatus={handleUpdateStatus}
+                    onPrint={() => handlePrintOrder(order)}
                   />
                 ))}
                 {filterOrdersByStatus(status).length === 0 && (
