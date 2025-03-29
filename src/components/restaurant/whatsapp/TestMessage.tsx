@@ -1,99 +1,107 @@
 
 import React, { useState } from 'react';
-import { Send, RefreshCw } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { useWhatsApp } from '@/context/WhatsAppContext';
+import { Label } from '@/components/ui/label';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { SendIcon } from 'lucide-react';
 import { toast } from 'sonner';
+import { sendTestMessageToWebhook } from '@/utils/webhookInterceptor';
 
-const TestMessage: React.FC = () => {
-  const { isConnected, isLoading, sendTestMessage } = useWhatsApp();
-  const [phoneNumber, setPhoneNumber] = useState('');
+const TestMessage = () => {
+  const [phone, setPhone] = useState('');
   const [message, setMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
 
-  const formatPhoneNumber = (number: string) => {
-    // Remove qualquer caractere que não seja dígito
-    const digits = number.replace(/\D/g, '');
-    
-    // Certificar que o número tem o formato correto (remover o '+' se existir e garantir que tem código do país)
-    if (digits.startsWith('55')) {
-      return digits;
-    } else {
-      return `55${digits}`;
-    }
-  };
-
-  const handleSendTest = async () => {
-    if (!phoneNumber.trim() || !message.trim()) {
-      toast.error('Por favor, preencha o número e a mensagem');
+  const handleSend = () => {
+    if (!phone || !message) {
+      toast.error('Por favor, preencha o número de telefone e a mensagem');
       return;
     }
-    
+
+    // Validar formato do telefone (formato simples)
+    if (!/^\d{10,15}$/.test(phone.replace(/\D/g, ''))) {
+      toast.error('Número de telefone inválido. Use apenas números (10-15 dígitos)');
+      return;
+    }
+
     setIsSending(true);
+
     try {
-      const formattedPhone = formatPhoneNumber(phoneNumber);
-      await sendTestMessage(formattedPhone, message);
-      toast.success(`Mensagem enviada para ${phoneNumber}`);
+      // Enviar mensagem de teste para o interceptor do webhook
+      const { messageId } = sendTestMessageToWebhook(
+        phone.replace(/\D/g, ''),
+        message
+      );
+      
+      toast.success('Mensagem de teste enviada com sucesso!');
+      console.log('Mensagem enviada com ID:', messageId);
+      
+      // Limpar formulário
       setMessage('');
     } catch (error) {
       console.error('Erro ao enviar mensagem:', error);
-      toast.error('Não foi possível enviar a mensagem. Verifique o console para mais detalhes.');
+      toast.error('Erro ao enviar mensagem de teste');
     } finally {
       setIsSending(false);
     }
   };
 
-  if (!isConnected) {
-    return null;
-  }
-
   return (
     <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-lg font-medium">Enviar Mensagem de Teste</CardTitle>
+      <CardHeader>
+        <CardTitle>Enviar Mensagem de Teste</CardTitle>
         <CardDescription>
-          Teste o envio de mensagens para verificar sua conexão
+          Simule o recebimento de uma mensagem do WhatsApp para testar seu fluxo
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          <div>
-            <label className="text-sm font-medium block mb-1">Número de Telefone</label>
-            <Input
-              value={phoneNumber}
-              onChange={(e) => setPhoneNumber(e.target.value)}
-              placeholder="5511999887766"
-            />
-            <p className="text-xs text-muted-foreground mt-1">
-              Incluir código do país e DDD, ex: 5511999887766 (sem o '+')
-            </p>
-          </div>
-          <div>
-            <label className="text-sm font-medium block mb-1">Mensagem</label>
-            <Textarea
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder="Digite sua mensagem de teste aqui..."
-              rows={3}
-            />
-          </div>
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="phone">Número de Telefone</Label>
+          <Input
+            id="phone"
+            placeholder="Ex: 5511999999999"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+          />
+          <p className="text-xs text-muted-foreground">
+            Use o formato completo com código do país (ex: 5511999999999)
+          </p>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="message">Mensagem</Label>
+          <Textarea
+            id="message"
+            placeholder="Digite a mensagem que o cliente enviaria..."
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            rows={3}
+          />
         </div>
       </CardContent>
-      <CardFooter className="pt-0">
-        <Button
-          onClick={handleSendTest}
-          disabled={isLoading || isSending || !phoneNumber.trim() || !message.trim()}
-          className="w-full"
+      <CardFooter>
+        <Button 
+          className="w-full" 
+          onClick={handleSend}
+          disabled={isSending || !phone || !message}
         >
           {isSending ? (
-            <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+            'Enviando...'
           ) : (
-            <Send className="h-4 w-4 mr-2" />
+            <>
+              <SendIcon className="h-4 w-4 mr-2" />
+              Enviar Mensagem de Teste
+            </>
           )}
-          Enviar Mensagem de Teste
         </Button>
       </CardFooter>
     </Card>

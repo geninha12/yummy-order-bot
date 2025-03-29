@@ -2,6 +2,23 @@
 // Este arquivo configura um interceptor para simular o comportamento de API
 // em ambiente de desenvolvimento
 
+// Configurações do webhook
+interface WebhookConfig {
+  verifyToken: string;
+  phoneNumberId: string;
+}
+
+// Armazenamento de dados do webhook
+const webhookData = {
+  isVerified: false,
+  lastVerification: null as Date | null,
+  receivedMessages: [] as any[],
+  config: {
+    verifyToken: 'yummy_webhook_verify_token',
+    phoneNumberId: '123456789012345',
+  } as WebhookConfig
+};
+
 // Inicializa o interceptor para capturar solicitações para a rota do webhook
 export const initWebhookInterceptor = () => {
   // Verificar se estamos em ambiente de browser
@@ -9,8 +26,8 @@ export const initWebhookInterceptor = () => {
 
   console.log('Inicializando interceptor de webhook WhatsApp...');
   
-  // Este script simula um endpoint de API em desenvolvimento
-  // Em produção, você teria uma rota de API real no backend
+  // Expor dados do webhook na janela para depuração
+  (window as any).webhookData = webhookData;
   
   // Interceptar requisições fetch para o endpoint do webhook
   const originalFetch = window.fetch;
@@ -35,7 +52,86 @@ export const initWebhookInterceptor = () => {
       // Gerar ID único para esta solicitação
       const requestId = Date.now().toString();
       
-      // Enviar mensagem para o componente do webhook processar
+      // Lógica específica para o método GET (verificação do webhook)
+      if (method === 'GET') {
+        const mode = queryParams['hub.mode'];
+        const token = queryParams['hub.verify_token'];
+        const challenge = queryParams['hub.challenge'];
+        
+        if (mode === 'subscribe' && token === webhookData.config.verifyToken) {
+          console.log('Webhook verificado com sucesso!');
+          webhookData.isVerified = true;
+          webhookData.lastVerification = new Date();
+          
+          // Responder com o desafio para confirmar a verificação
+          return Promise.resolve(new Response(challenge, {
+            status: 200,
+            headers: { 'Content-Type': 'text/plain' }
+          }));
+        } else {
+          console.error('Falha na verificação do webhook: token inválido');
+          return Promise.resolve(new Response('Forbidden', {
+            status: 403,
+            headers: { 'Content-Type': 'text/plain' }
+          }));
+        }
+      }
+      
+      // Lógica específica para o método POST (recebimento de mensagens)
+      if (method === 'POST' && body) {
+        console.log('Mensagem webhook recebida:', body);
+        
+        // Verificar se é uma notificação válida do WhatsApp Business
+        if (body.object === 'whatsapp_business_account') {
+          // Armazenar mensagens recebidas
+          const entries = body.entry || [];
+          let hasMessages = false;
+          
+          entries.forEach(entry => {
+            const changes = entry.changes || [];
+            
+            changes.forEach(change => {
+              if (change.field === 'messages') {
+                const messages = change.value.messages || [];
+                
+                if (messages.length > 0) {
+                  hasMessages = true;
+                  // Armazenar mensagens para processamento
+                  webhookData.receivedMessages.push(...messages);
+                  
+                  // Enviar evento para o componente do WhatsApp processar
+                  window.dispatchEvent(new CustomEvent('whatsapp-webhook-message', {
+                    detail: { messages, metadata: change.value }
+                  }));
+                }
+              }
+            });
+          });
+          
+          if (hasMessages) {
+            console.log('Novas mensagens processadas com sucesso');
+          } else {
+            console.log('Solicitação de webhook sem mensagens para processar');
+          }
+          
+          // Responder com status 200 para confirmar recebimento
+          return Promise.resolve(new Response(JSON.stringify({ success: true }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' }
+          }));
+        } else {
+          // Não é um evento do WhatsApp
+          console.error('Solicitação inválida: não é um evento do WhatsApp');
+          return Promise.resolve(new Response(JSON.stringify({ 
+            error: 'Invalid request. Expected WhatsApp Business Account notification' 
+          }), {
+            status: 404,
+            headers: { 'Content-Type': 'application/json' }
+          }));
+        }
+      }
+      
+      // Enviar mensagem para o componente do webhook processar (legado)
       window.postMessage({
         type: 'whatsapp-webhook-request',
         requestId,
@@ -74,4 +170,73 @@ export const initWebhookInterceptor = () => {
   };
   
   console.log('Interceptor de webhook WhatsApp inicializado com sucesso!');
+};
+
+// Função para obter os dados do webhook
+export const getWebhookData = () => {
+  return webhookData;
+};
+
+// Função para enviar uma mensagem simulada para o webhook
+export const sendTestMessageToWebhook = (phone: string, text: string) => {
+  const timestamp = new Date().getTime() / 1000;
+  const messageId = `wamid.${Date.now()}`;
+  
+  const simulatedWebhookData = {
+    object: "whatsapp_business_account",
+    entry: [{
+      id: "WHATSAPP_BUSINESS_ACCOUNT_ID",
+      changes: [{
+        value: {
+          messaging_product: "whatsapp",
+          metadata: {
+            display_phone_number: "5511999999999",
+            phone_number_id: webhookData.config.phoneNumberId
+          },
+          contacts: [{
+            profile: {
+              name: `Cliente ${phone.slice(-4)}`
+            },
+            wa_id: phone
+          }],
+          messages: [{
+            id: messageId,
+            from: phone,
+            timestamp: timestamp,
+            type: "text",
+            text: {
+              body: text
+            }
+          }]
+        },
+        field: "messages"
+      }]
+    }]
+  };
+  
+  // Enviar esta solicitação para o nosso próprio interceptor
+  fetch('/api/whatsapp/webhook', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(simulatedWebhookData)
+  }).then(response => {
+    console.log('Teste de mensagem enviado com sucesso', response);
+  }).catch(error => {
+    console.error('Erro ao enviar teste de mensagem', error);
+  });
+  
+  return { messageId, timestamp };
+};
+
+// Exportar configurações do webhook
+export const getWebhookConfig = () => {
+  return { ...webhookData.config };
+};
+
+// Atualizar configurações do webhook
+export const updateWebhookConfig = (newConfig: Partial<WebhookConfig>) => {
+  webhookData.config = { ...webhookData.config, ...newConfig };
+  return { ...webhookData.config };
 };
