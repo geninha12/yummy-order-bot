@@ -153,11 +153,15 @@ export const WhatsAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   // Verificar se existem credenciais armazenadas ao iniciar
   useEffect(() => {
+    console.log('[WhatsAppContext] Inicializando contexto WhatsApp');
     const storedToken = localStorage.getItem('whatsapp_token');
     const storedPhoneNumberId = localStorage.getItem('whatsapp_phone_id');
     const storedAppId = localStorage.getItem('whatsapp_app_id');
     const storedAppSecret = localStorage.getItem('whatsapp_app_secret');
     const storedVerificationToken = localStorage.getItem('whatsapp_verification_token');
+    
+    console.log('[WhatsAppContext] Token armazenado:', storedToken ? 'Presente' : 'Ausente');
+    console.log('[WhatsAppContext] ID do telefone armazenado:', storedPhoneNumberId ? 'Presente' : 'Ausente');
     
     if (storedToken && storedPhoneNumberId) {
       setAccessToken(storedToken);
@@ -166,38 +170,51 @@ export const WhatsAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       if (storedAppSecret) setAppSecret(storedAppSecret);
       if (storedVerificationToken) setVerificationToken(storedVerificationToken);
       
-      connectWhatsApp(storedToken, storedPhoneNumberId, storedAppId || undefined, storedAppSecret || undefined).catch(() => {
-        // Tokens podem ter expirado
-        localStorage.removeItem('whatsapp_token');
-        localStorage.removeItem('whatsapp_phone_id');
-        localStorage.removeItem('whatsapp_app_id');
-        localStorage.removeItem('whatsapp_app_secret');
-        localStorage.removeItem('whatsapp_verification_token');
-        setAccessToken(null);
-        setPhoneNumberId(null);
-        setAppId(null);
-        setAppSecret(null);
-        setVerificationToken(null);
-      });
+      console.log('[WhatsAppContext] Tentando conectar com credenciais armazenadas');
+      
+      connectWhatsApp(storedToken, storedPhoneNumberId, storedAppId || undefined, storedAppSecret || undefined)
+        .then(() => {
+          console.log('[WhatsAppContext] Conectado com sucesso usando credenciais armazenadas');
+        })
+        .catch((error) => {
+          // Tokens podem ter expirado
+          console.error('[WhatsAppContext] Erro ao conectar com credenciais armazenadas:', error);
+          localStorage.removeItem('whatsapp_token');
+          localStorage.removeItem('whatsapp_phone_id');
+          localStorage.removeItem('whatsapp_app_id');
+          localStorage.removeItem('whatsapp_app_secret');
+          localStorage.removeItem('whatsapp_verification_token');
+          setAccessToken(null);
+          setPhoneNumberId(null);
+          setAppId(null);
+          setAppSecret(null);
+          setVerificationToken(null);
+        });
+    } else {
+      console.log('[WhatsAppContext] Nenhuma credencial encontrada no localStorage');
     }
   }, []);
 
   const connectWhatsApp = async (token: string, phoneId: string, applicationId?: string, applicationSecret?: string) => {
+    console.log('[WhatsAppContext] Iniciando conexão com WhatsApp');
     setIsLoading(true);
     setConnectionError(null);
     
     try {
+      console.log(`[WhatsAppContext] Testando conexão para phoneId: ${phoneId}`);
+      
       // Faz um teste de conexão chamando a API de informações da conta
-      const response = await fetch(
-        `https://graph.facebook.com/v19.0/${phoneId}?fields=verified_name,status,quality_rating`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const url = `https://graph.facebook.com/v19.0/${phoneId}?fields=verified_name,status,quality_rating`;
+      console.log('[WhatsAppContext] Fazendo requisição para:', url);
+      
+      const response = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       
       const data = await response.json();
+      console.log('[WhatsAppContext] Resposta da API:', data);
       
       if (data.error) {
         throw new Error(data.error.message || 'Error connecting to WhatsApp API');
@@ -216,6 +233,7 @@ export const WhatsAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       });
       
       // Armazenar credenciais para uso futuro
+      console.log('[WhatsAppContext] Salvando credenciais no localStorage');
       localStorage.setItem('whatsapp_token', token);
       localStorage.setItem('whatsapp_phone_id', phoneId);
       if (applicationId) localStorage.setItem('whatsapp_app_id', applicationId);
@@ -224,6 +242,7 @@ export const WhatsAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       toast.success('WhatsApp conectado com sucesso!');
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      console.error('[WhatsAppContext] Erro de conexão:', errorMessage);
       setConnectionError(`Não foi possível conectar ao WhatsApp: ${errorMessage}`);
       toast.error('Erro ao conectar com WhatsApp');
       console.error('Erro ao conectar com WhatsApp:', error);
@@ -313,6 +332,7 @@ export const WhatsAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const sendTestMessage = async (phoneNumber: string, message: string): Promise<void> => {
     if (!accessToken || !phoneNumberId) {
+      console.error('[WhatsAppContext] WhatsApp API não conectada');
       throw new Error('WhatsApp API not connected');
     }
     
@@ -327,27 +347,31 @@ export const WhatsAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       // Remove qualquer '+' do início do número
       phoneNumber = phoneNumber.replace(/^\+/, '');
       
-      console.log(`Enviando mensagem para: ${phoneNumber}`);
+      console.log(`[WhatsAppContext] Enviando mensagem para: ${phoneNumber}`);
       
-      const response = await fetch(
-        `https://graph.facebook.com/v19.0/${phoneNumberId}/messages`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            messaging_product: 'whatsapp',
-            to: phoneNumber,
-            type: 'text',
-            text: { body: message }
-          }),
-        }
-      );
+      const url = `https://graph.facebook.com/v19.0/${phoneNumberId}/messages`;
+      console.log('[WhatsAppContext] URL da API:', url);
+      
+      const body = {
+        messaging_product: 'whatsapp',
+        to: phoneNumber,
+        type: 'text',
+        text: { body: message }
+      };
+      
+      console.log('[WhatsAppContext] Corpo da requisição:', body);
+      
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      });
       
       const data = await response.json();
-      console.log('Resposta da API do WhatsApp:', data);
+      console.log('[WhatsAppContext] Resposta da API do WhatsApp:', data);
       
       if (data.error) {
         throw new Error(data.error.message || 'Error sending WhatsApp message');
@@ -375,7 +399,7 @@ export const WhatsAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         ]);
       }
     } catch (error) {
-      console.error('Erro ao enviar mensagem:', error);
+      console.error('[WhatsAppContext] Erro ao enviar mensagem:', error);
       throw error; // Propaga o erro para ser tratado no componente
     } finally {
       setIsLoading(false);

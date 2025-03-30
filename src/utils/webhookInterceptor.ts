@@ -1,4 +1,3 @@
-
 // Este arquivo configura um interceptor para simular o comportamento de API
 // em ambiente de desenvolvimento
 
@@ -24,19 +23,69 @@ export const initWebhookInterceptor = () => {
   // Verificar se estamos em ambiente de browser
   if (typeof window === 'undefined') return;
 
-  console.log('Inicializando interceptor de webhook WhatsApp...');
+  console.log('[WebhookInterceptor] Inicializando interceptor de webhook WhatsApp...');
   
   // Expor dados do webhook na janela para depuração
   (window as any).webhookData = webhookData;
+  
+  // Verificar se o fetch já foi interceptado para evitar interceptação múltipla
+  if ((window as any).__whatsappInterceptorInitialized) {
+    console.log('[WebhookInterceptor] Interceptor já inicializado, pulando...');
+    return;
+  }
+  
+  // Marcar como inicializado
+  (window as any).__whatsappInterceptorInitialized = true;
   
   // Interceptar requisições fetch para o endpoint do webhook
   const originalFetch = window.fetch;
   window.fetch = async function(input, init) {
     const url = input instanceof Request ? input.url : input.toString();
     
+    console.log(`[WebhookInterceptor] Requisição detectada para: ${url}`);
+    
+    // Detectar chamadas à API do Graph do Facebook
+    if (url.includes('graph.facebook.com')) {
+      console.log('[WebhookInterceptor] Detectada chamada à API do Facebook Graph');
+      
+      // Se for uma requisição para verificar número ou enviar mensagem (simulando ambiente de desenvolvimento)
+      if (url.includes('/messages')) {
+        console.log('[WebhookInterceptor] Simulando envio de mensagem WhatsApp');
+        
+        // Extrair corpo da requisição
+        const body = init?.body ? JSON.parse(init.body.toString()) : {};
+        console.log('[WebhookInterceptor] Corpo da requisição:', body);
+        
+        // Simular resposta bem-sucedida
+        return Promise.resolve(new Response(JSON.stringify({
+          messaging_product: "whatsapp",
+          contacts: [{ input: body.to, wa_id: body.to }],
+          messages: [{ id: `wamid.${Date.now()}` }]
+        }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' }
+        }));
+      }
+      
+      // Se for uma requisição para obter informações da conta
+      if (url.match(/\/v\d+\.\d+\/\d+\?fields=/)) {
+        console.log('[WebhookInterceptor] Simulando obtenção de informações da conta WhatsApp');
+        
+        // Retorna dados simulados de uma conta WhatsApp
+        return Promise.resolve(new Response(JSON.stringify({
+          verified_name: "Lovable Restaurant",
+          status: "connected",
+          quality_rating: "GREEN"
+        }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' }
+        }));
+      }
+    }
+    
     // Verificar se a solicitação é para nosso endpoint de webhook
     if (url.includes('/api/whatsapp/webhook')) {
-      console.log(`Interceptando solicitação para ${url}`);
+      console.log(`[WebhookInterceptor] Interceptando solicitação para ${url}`);
       
       // Extrair método, corpo e parâmetros da consulta
       const method = init?.method || 'GET';
@@ -58,8 +107,10 @@ export const initWebhookInterceptor = () => {
         const token = queryParams['hub.verify_token'];
         const challenge = queryParams['hub.challenge'];
         
+        console.log('[WebhookInterceptor] Verificação de webhook detectada:', { mode, token, challenge });
+        
         if (mode === 'subscribe' && token === webhookData.config.verifyToken) {
-          console.log('Webhook verificado com sucesso!');
+          console.log('[WebhookInterceptor] Webhook verificado com sucesso!');
           webhookData.isVerified = true;
           webhookData.lastVerification = new Date();
           
@@ -69,7 +120,7 @@ export const initWebhookInterceptor = () => {
             headers: { 'Content-Type': 'text/plain' }
           }));
         } else {
-          console.error('Falha na verificação do webhook: token inválido');
+          console.error('[WebhookInterceptor] Falha na verificação do webhook: token inválido');
           return Promise.resolve(new Response('Forbidden', {
             status: 403,
             headers: { 'Content-Type': 'text/plain' }
@@ -79,7 +130,7 @@ export const initWebhookInterceptor = () => {
       
       // Lógica específica para o método POST (recebimento de mensagens)
       if (method === 'POST' && body) {
-        console.log('Mensagem webhook recebida:', body);
+        console.log('[WebhookInterceptor] Mensagem webhook recebida:', body);
         
         // Verificar se é uma notificação válida do WhatsApp Business
         if (body.object === 'whatsapp_business_account') {
@@ -109,9 +160,9 @@ export const initWebhookInterceptor = () => {
           });
           
           if (hasMessages) {
-            console.log('Novas mensagens processadas com sucesso');
+            console.log('[WebhookInterceptor] Novas mensagens processadas com sucesso');
           } else {
-            console.log('Solicitação de webhook sem mensagens para processar');
+            console.log('[WebhookInterceptor] Solicitação de webhook sem mensagens para processar');
           }
           
           // Responder com status 200 para confirmar recebimento
@@ -121,7 +172,7 @@ export const initWebhookInterceptor = () => {
           }));
         } else {
           // Não é um evento do WhatsApp
-          console.error('Solicitação inválida: não é um evento do WhatsApp');
+          console.error('[WebhookInterceptor] Solicitação inválida: não é um evento do WhatsApp');
           return Promise.resolve(new Response(JSON.stringify({ 
             error: 'Invalid request. Expected WhatsApp Business Account notification' 
           }), {
@@ -166,10 +217,11 @@ export const initWebhookInterceptor = () => {
     }
     
     // Para outras solicitações, usar fetch normal
+    console.log(`[WebhookInterceptor] Passando requisição para fetch original: ${url}`);
     return originalFetch.apply(this, [input, init]);
   };
   
-  console.log('Interceptor de webhook WhatsApp inicializado com sucesso!');
+  console.log('[WebhookInterceptor] Interceptor de webhook WhatsApp inicializado com sucesso!');
 };
 
 // Função para obter os dados do webhook
