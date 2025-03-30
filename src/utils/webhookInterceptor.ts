@@ -234,6 +234,8 @@ export const sendTestMessageToWebhook = (phone: string, text: string) => {
   const timestamp = new Date().getTime() / 1000;
   const messageId = `wamid.${Date.now()}`;
   
+  console.log(`[WebhookInterceptor] Simulando mensagem do número: ${phone}`);
+  
   const simulatedWebhookData = {
     object: "whatsapp_business_account",
     entry: [{
@@ -266,6 +268,8 @@ export const sendTestMessageToWebhook = (phone: string, text: string) => {
     }]
   };
   
+  console.log(`[WebhookInterceptor] Enviando payload simulado:`, simulatedWebhookData);
+  
   // Enviar esta solicitação para o nosso próprio interceptor
   fetch('/api/whatsapp/webhook', {
     method: 'POST',
@@ -274,9 +278,27 @@ export const sendTestMessageToWebhook = (phone: string, text: string) => {
     },
     body: JSON.stringify(simulatedWebhookData)
   }).then(response => {
-    console.log('Teste de mensagem enviado com sucesso', response);
+    console.log('[WebhookInterceptor] Resposta da simulação:', response.status);
+    // Dispatchar um evento para notificar sobre a mensagem simulada
+    window.dispatchEvent(new CustomEvent('whatsapp-webhook-message', {
+      detail: {
+        messages: [{
+          id: messageId,
+          from: phone,
+          timestamp: timestamp,
+          type: "text",
+          text: {
+            body: text
+          }
+        }],
+        metadata: {
+          display_phone_number: "5511999999999",
+          phone_number_id: webhookData.config.phoneNumberId
+        }
+      }
+    }));
   }).catch(error => {
-    console.error('Erro ao enviar teste de mensagem', error);
+    console.error('[WebhookInterceptor] Erro ao simular mensagem:', error);
   });
   
   return { messageId, timestamp };
