@@ -359,7 +359,7 @@ export const WhatsAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         text: { body: message }
       };
       
-      console.log('[WhatsAppContext] Corpo da requisição:', body);
+      console.log('[WhatsAppContext] Corpo da requisição:', JSON.stringify(body));
       
       const response = await fetch(url, {
         method: 'POST',
@@ -370,8 +370,21 @@ export const WhatsAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         body: JSON.stringify(body),
       });
       
-      const data = await response.json();
-      console.log('[WhatsAppContext] Resposta da API do WhatsApp:', data);
+      const responseText = await response.text();
+      let data;
+      
+      try {
+        data = JSON.parse(responseText);
+        console.log('[WhatsAppContext] Resposta da API do WhatsApp:', data);
+      } catch (e) {
+        console.error('[WhatsAppContext] Falha ao analisar resposta:', responseText);
+        data = { error: { message: 'Erro ao analisar resposta da API' } };
+      }
+      
+      if (!response.ok) {
+        console.error(`[WhatsAppContext] Erro HTTP ${response.status}:`, responseText);
+        throw new Error(`HTTP Error ${response.status}: ${data?.error?.message || responseText}`);
+      }
       
       if (data.error) {
         throw new Error(data.error.message || 'Error sending WhatsApp message');

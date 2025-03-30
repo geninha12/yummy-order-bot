@@ -56,11 +56,47 @@ export const initWebhookInterceptor = () => {
         const body = init?.body ? JSON.parse(init.body.toString()) : {};
         console.log('[WebhookInterceptor] Corpo da requisição:', body);
         
+        // Validar parâmetros importantes
+        if (!body.to) {
+          console.error('[WebhookInterceptor] Erro: Número de telefone (to) ausente no corpo da requisição');
+          return Promise.resolve(new Response(JSON.stringify({
+            error: {
+              message: "Missing required parameter: to",
+              type: "OAuthException",
+              code: 100,
+              error_subcode: 2018341,
+              fbtrace_id: "fake_trace_id"
+            }
+          }), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' }
+          }));
+        }
+        
+        if (!body.text?.body && body.type === 'text') {
+          console.error('[WebhookInterceptor] Erro: Conteúdo da mensagem ausente no corpo da requisição');
+          return Promise.resolve(new Response(JSON.stringify({
+            error: {
+              message: "Missing required parameter: text.body",
+              type: "OAuthException",
+              code: 100,
+              error_subcode: 2018341,
+              fbtrace_id: "fake_trace_id"
+            }
+          }), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' }
+          }));
+        }
+        
         // Simular resposta bem-sucedida
+        const messageId = `wamid.${Date.now()}`;
+        console.log(`[WebhookInterceptor] Mensagem simulada com sucesso, ID: ${messageId}`);
+        
         return Promise.resolve(new Response(JSON.stringify({
           messaging_product: "whatsapp",
           contacts: [{ input: body.to, wa_id: body.to }],
-          messages: [{ id: `wamid.${Date.now()}` }]
+          messages: [{ id: messageId }]
         }), {
           status: 200,
           headers: { 'Content-Type': 'application/json' }
