@@ -12,9 +12,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { SendIcon, AlertCircle } from 'lucide-react';
+import { SendIcon, AlertCircle, InfoIcon } from 'lucide-react';
 import { toast } from 'sonner';
-import { sendTestMessageToWebhook } from '@/utils/webhookInterceptor';
+import { sendTestMessageToWebhook, getWebhookConfig } from '@/utils/webhookInterceptor';
 import { useWhatsApp } from '@/context/WhatsAppContext';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
@@ -23,6 +23,8 @@ const TestMessage = () => {
   const [message, setMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
   const { isConnected, sendTestMessage } = useWhatsApp();
+  const webhookConfig = getWebhookConfig();
+  const useNgrok = webhookConfig.useNgrok && webhookConfig.ngrokUrl;
 
   const formatPhoneNumber = (phoneNumber: string): string => {
     // Remove any non-digit characters
@@ -33,8 +35,12 @@ const TestMessage = () => {
       cleaned = '55' + cleaned;
     }
     
-    console.log(`[TestMessage] Formatted phone number: ${cleaned} (original: ${phoneNumber})`);
+    console.log(`[TestMessage] Formatado: ${cleaned} (original: ${phoneNumber})`);
     return cleaned;
+  };
+
+  const isValidPhoneNumber = (phoneNumber: string): boolean => {
+    return /^\d{10,15}$/.test(phoneNumber);
   };
 
   const handleSend = async () => {
@@ -46,13 +52,17 @@ const TestMessage = () => {
     // Validate and format phone number
     const formattedPhone = formatPhoneNumber(phone);
     
-    if (!/^\d{10,15}$/.test(formattedPhone)) {
+    if (!isValidPhoneNumber(formattedPhone)) {
       toast.error('Número de telefone inválido. Use apenas números (10-15 dígitos)');
       return;
     }
 
     setIsSending(true);
-    console.log(`[TestMessage] Iniciando envio para ${formattedPhone}`, { isConnected });
+    console.log(`[TestMessage] Iniciando envio para ${formattedPhone}`, { 
+      isConnected, 
+      useNgrok,
+      webhookUrl: useNgrok ? webhookConfig.ngrokUrl : 'padrão' 
+    });
 
     try {
       // First simulate the message receipt locally (for testing)
@@ -67,21 +77,30 @@ const TestMessage = () => {
       if (isConnected) {
         try {
           console.log('[TestMessage] Tentando enviar mensagem real via WhatsApp API');
-          await sendTestMessage(formattedPhone, message);
-          console.log('[TestMessage] Mensagem real enviada com sucesso');
-          toast.success('Mensagem enviada para o WhatsApp com sucesso!');
+          const result = await sendTestMessage(formattedPhone, message);
+          console.log('[TestMessage] Resposta do envio real:', result);
+          
+          toast.success(useNgrok 
+            ? 'Mensagem enviada com sucesso via ngrok!' 
+            : 'Mensagem enviada para o WhatsApp com sucesso!');
         } catch (whatsappError) {
           console.error('[TestMessage] Erro ao enviar mensagem pelo WhatsApp:', whatsappError);
           const errorMessage = whatsappError instanceof Error ? whatsappError.message : 'Erro desconhecido';
           console.error('[TestMessage] Detalhes do erro:', errorMessage);
-          toast.error(`Falha ao enviar pelo WhatsApp: ${errorMessage}`);
+          
+          // Em ambiente ngrok, este erro pode ser normal se o webhook ainda não estiver configurado
+          if (useNgrok) {
+            toast.info('Simulação local concluída. Confira se seu túnel ngrok está ativo e configurado no WhatsApp para receber mensagens reais.');
+          } else {
+            toast.error(`Falha ao enviar pelo WhatsApp: ${errorMessage}`);
+          }
         }
       } else {
         console.log('[TestMessage] WhatsApp não conectado, apenas simulação local foi realizada');
         toast.info('Simulação local concluída (WhatsApp não conectado)');
       }
       
-      // Clear form
+      // Clear message field after sending
       setMessage('');
     } catch (error) {
       console.error('[TestMessage] Erro ao enviar mensagem:', error);
@@ -105,6 +124,15 @@ const TestMessage = () => {
             <AlertCircle className="h-4 w-4 text-yellow-600" />
             <AlertDescription className="text-yellow-700">
               O WhatsApp não está conectado. A mensagem será apenas simulada localmente.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {isConnected && useNgrok && (
+          <Alert className="bg-blue-50 border-blue-200">
+            <InfoIcon className="h-4 w-4 text-blue-600" />
+            <AlertDescription className="text-blue-700">
+              Modo ngrok ativo. As mensagens reais serão enviadas através do seu túnel ngrok.
             </AlertDescription>
           </Alert>
         )}

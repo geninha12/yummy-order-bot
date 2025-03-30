@@ -1,3 +1,4 @@
+
 // Este arquivo configura um interceptor para simular o comportamento de API
 // em ambiente de desenvolvimento
 
@@ -5,6 +6,8 @@
 interface WebhookConfig {
   verifyToken: string;
   phoneNumberId: string;
+  ngrokUrl?: string;
+  useNgrok?: boolean;
 }
 
 // Armazenamento de dados do webhook
@@ -15,7 +18,17 @@ const webhookData = {
   config: {
     verifyToken: 'yummy_webhook_verify_token',
     phoneNumberId: '123456789012345',
+    ngrokUrl: '',
+    useNgrok: false
   } as WebhookConfig
+};
+
+// Verificar se estamos em desenvolvimento
+const isDevelopment = () => {
+  return process.env.NODE_ENV === 'development' || 
+         window.location.hostname === 'localhost' || 
+         window.location.hostname.includes('127.0.0.1') ||
+         window.location.hostname.includes('lovable');
 };
 
 // Inicializa o interceptor para capturar solicitações para a rota do webhook
@@ -37,12 +50,25 @@ export const initWebhookInterceptor = () => {
   // Marcar como inicializado
   (window as any).__whatsappInterceptorInitialized = true;
   
+  // Carregar configurações do localStorage
+  tryLoadConfigFromStorage();
+  
   // Interceptar requisições fetch para o endpoint do webhook
   const originalFetch = window.fetch;
   window.fetch = async function(input, init) {
     const url = input instanceof Request ? input.url : input.toString();
     
     console.log(`[WebhookInterceptor] Requisição detectada para: ${url}`);
+    
+    // Se estamos em desenvolvimento e usando ngrok, não interceptamos chamadas externas reais
+    // para permitir que as chamadas cheguem ao ngrok e voltem para o aplicativo local
+    if (webhookData.config.useNgrok && webhookData.config.ngrokUrl) {
+      // Se a URL contém ngrok, deixamos passar sem interceptar
+      if (url.includes('ngrok')) {
+        console.log('[WebhookInterceptor] Requisição para ngrok detectada, passando sem interceptar');
+        return originalFetch.apply(this, [input, init]);
+      }
+    }
     
     // Detectar chamadas à API do Graph do Facebook
     if (url.includes('graph.facebook.com')) {
@@ -89,33 +115,41 @@ export const initWebhookInterceptor = () => {
           }));
         }
         
-        // Simular resposta bem-sucedida
-        const messageId = `wamid.${Date.now()}`;
-        console.log(`[WebhookInterceptor] Mensagem simulada com sucesso, ID: ${messageId}`);
-        
-        return Promise.resolve(new Response(JSON.stringify({
-          messaging_product: "whatsapp",
-          contacts: [{ input: body.to, wa_id: body.to }],
-          messages: [{ id: messageId }]
-        }), {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' }
-        }));
+        // Em desenvolvimento, retorna resposta simulada
+        // Em produção ou modo ngrok, deixa a requisição seguir para a API real
+        if (isDevelopment() && !webhookData.config.useNgrok) {
+          // Simular resposta bem-sucedida
+          const messageId = `wamid.${Date.now()}`;
+          console.log(`[WebhookInterceptor] Mensagem simulada com sucesso, ID: ${messageId}`);
+          
+          return Promise.resolve(new Response(JSON.stringify({
+            messaging_product: "whatsapp",
+            contacts: [{ input: body.to, wa_id: body.to }],
+            messages: [{ id: messageId }]
+          }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' }
+          }));
+        } else {
+          console.log('[WebhookInterceptor] Modo real: passando requisição para a API do WhatsApp');
+        }
       }
       
       // Se for uma requisição para obter informações da conta
       if (url.match(/\/v\d+\.\d+\/\d+\?fields=/)) {
         console.log('[WebhookInterceptor] Simulando obtenção de informações da conta WhatsApp');
         
-        // Retorna dados simulados de uma conta WhatsApp
-        return Promise.resolve(new Response(JSON.stringify({
-          verified_name: "Lovable Restaurant",
-          status: "connected",
-          quality_rating: "GREEN"
-        }), {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' }
-        }));
+        if (isDevelopment() && !webhookData.config.useNgrok) {
+          // Retorna dados simulados de uma conta WhatsApp
+          return Promise.resolve(new Response(JSON.stringify({
+            verified_name: "Lovable Restaurant",
+            status: "connected",
+            quality_rating: "GREEN"
+          }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' }
+          }));
+        }
       }
     }
     
@@ -260,6 +294,30 @@ export const initWebhookInterceptor = () => {
   console.log('[WebhookInterceptor] Interceptor de webhook WhatsApp inicializado com sucesso!');
 };
 
+// Tenta carregar configurações do localStorage
+const tryLoadConfigFromStorage = () => {
+  try {
+    const storedConfig = localStorage.getItem('whatsapp_webhook_config');
+    if (storedConfig) {
+      const parsedConfig = JSON.parse(storedConfig);
+      webhookData.config = { ...webhookData.config, ...parsedConfig };
+      console.log('[WebhookInterceptor] Configurações carregadas do localStorage:', webhookData.config);
+    }
+  } catch (e) {
+    console.error('[WebhookInterceptor] Erro ao carregar configurações do localStorage:', e);
+  }
+};
+
+// Salva configurações no localStorage
+const saveConfigToStorage = () => {
+  try {
+    localStorage.setItem('whatsapp_webhook_config', JSON.stringify(webhookData.config));
+    console.log('[WebhookInterceptor] Configurações salvas no localStorage');
+  } catch (e) {
+    console.error('[WebhookInterceptor] Erro ao salvar configurações no localStorage:', e);
+  }
+};
+
 // Função para obter os dados do webhook
 export const getWebhookData = () => {
   return webhookData;
@@ -348,5 +406,6 @@ export const getWebhookConfig = () => {
 // Atualizar configurações do webhook
 export const updateWebhookConfig = (newConfig: Partial<WebhookConfig>) => {
   webhookData.config = { ...webhookData.config, ...newConfig };
+  saveConfigToStorage();
   return { ...webhookData.config };
 };

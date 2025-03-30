@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { toast } from "sonner";
+import { getWebhookConfig } from '@/utils/webhookInterceptor';
 
 // Tipos para a API do WhatsApp
 export type WhatsAppFlowTrigger = 'welcome' | 'customer_request' | 'abandoned_cart' | 'order_update';
@@ -50,7 +51,7 @@ type WhatsAppContextType = {
   deleteFlow: (id: string) => Promise<void>;
   activateFlow: (id: string) => Promise<void>;
   deactivateFlow: (id: string) => Promise<void>;
-  sendTestMessage: (phoneNumber: string, message: string) => Promise<void>;
+  sendTestMessage: (phoneNumber: string, message: string) => Promise<any>;
   generateVerificationToken: () => Promise<string>;
 };
 
@@ -213,8 +214,18 @@ export const WhatsAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         },
       });
       
-      const data = await response.json();
-      console.log('[WhatsAppContext] Resposta da API:', data);
+      // Tenta obter o corpo da resposta como texto primeiro para depuração
+      const responseText = await response.text();
+      console.log('[WhatsAppContext] Resposta da API (texto):', responseText);
+      
+      let data;
+      try {
+        data = JSON.parse(responseText);
+        console.log('[WhatsAppContext] Resposta da API (objeto):', data);
+      } catch (e) {
+        console.error('[WhatsAppContext] Erro ao analisar resposta JSON:', e);
+        throw new Error(`Erro ao analisar resposta da API: ${responseText}`);
+      }
       
       if (data.error) {
         throw new Error(data.error.message || 'Error connecting to WhatsApp API');
@@ -246,6 +257,7 @@ export const WhatsAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setConnectionError(`Não foi possível conectar ao WhatsApp: ${errorMessage}`);
       toast.error('Erro ao conectar com WhatsApp');
       console.error('Erro ao conectar com WhatsApp:', error);
+      throw error; // Re-throw para o componente tratar
     } finally {
       setIsLoading(false);
     }
@@ -330,7 +342,7 @@ export const WhatsAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     await updateFlow(id, { active: false });
   };
 
-  const sendTestMessage = async (phoneNumber: string, message: string): Promise<void> => {
+  const sendTestMessage = async (phoneNumber: string, message: string): Promise<any> => {
     if (!accessToken || !phoneNumberId) {
       console.error('[WhatsAppContext] WhatsApp API não conectada');
       throw new Error('WhatsApp API not connected');
@@ -347,7 +359,12 @@ export const WhatsAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       // Remove qualquer '+' do início do número
       phoneNumber = phoneNumber.replace(/^\+/, '');
       
-      console.log(`[WhatsAppContext] Enviando mensagem para: ${phoneNumber}`);
+      // Verificar se estamos usando ngrok para desenvolvimento
+      const webhookConfig = getWebhookConfig();
+      const useNgrok = webhookConfig.useNgrok && webhookConfig.ngrokUrl;
+      
+      console.log(`[WhatsAppContext] Enviando mensagem para: ${phoneNumber}`, 
+        useNgrok ? `(Modo ngrok: ${webhookConfig.ngrokUrl})` : '(Modo normal)');
       
       const url = `https://graph.facebook.com/v19.0/${phoneNumberId}/messages`;
       console.log('[WhatsAppContext] URL da API:', url);
@@ -371,6 +388,8 @@ export const WhatsAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       });
       
       const responseText = await response.text();
+      console.log('[WhatsAppContext] Resposta em texto:', responseText);
+      
       let data;
       
       try {
@@ -411,6 +430,8 @@ export const WhatsAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           ...prev
         ]);
       }
+      
+      return data; // Retorna os dados da resposta para quem chamou
     } catch (error) {
       console.error('[WhatsAppContext] Erro ao enviar mensagem:', error);
       throw error; // Propaga o erro para ser tratado no componente
